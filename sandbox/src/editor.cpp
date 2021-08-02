@@ -195,13 +195,33 @@ void Editor::run()
 			}
 				break;
 			case 'R':
-				ImGui::TextWrapped("ADD STUFF HERE");
+			{
+				//ImGui::TextWrapped("ADD STUFF HERE");
 				/*  TODO:
 					Based on the code above you should implement ImGui controls to be able to change the render component mesh type and colour.
 					Mesh type should be selected using an ImGui::RadioButton
 					Colour should be changed using an ImGui::ColorEdit3
 					Look in the ImGui::ShowDemoWindow() code for help on how to use these controls.
 				*/
+
+				auto& renderComp = m_registry.get<RenderComponent>(selectedEntity);
+
+				// Colour 
+				static float rgb[3];
+				// Set rgb from component
+				rgb[0] = renderComp.rgb.x;
+				rgb[1] = renderComp.rgb.y;
+				rgb[2] = renderComp.rgb.z;
+
+				ImGui::TextWrapped("Colour");
+				ImGui::Text("R           G           B");
+				ImGui::ColorEdit3("Colour", rgb, 2);
+				// Set component from rgb
+				renderComp.rgb = { rgb[0], rgb[1], rgb[2] };
+
+				// Update mesh render
+				renderComp.updateRender();
+			}
 				break;
 			case 'K':
 				ImGui::TextWrapped("No properties.");

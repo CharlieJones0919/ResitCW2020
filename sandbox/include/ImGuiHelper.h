@@ -3,6 +3,7 @@
 #include <examples/imgui_impl_glfw.h>
 #include <examples/imgui_impl_opengl3.h>
 #include <array>
+#include <string> // Shouldn't need to be here - should inherit this include from imgui.h.
 
 class ImGuiHelper
 {
