@@ -196,14 +196,7 @@ void Editor::run()
 				break;
 			case 'R':
 			{
-				//ImGui::TextWrapped("ADD STUFF HERE");
-				/*  TODO:
-					Based on the code above you should implement ImGui controls to be able to change the render component mesh type and colour.
-					Mesh type should be selected using an ImGui::RadioButton
-					Colour should be changed using an ImGui::ColorEdit3
-					Look in the ImGui::ShowDemoWindow() code for help on how to use these controls.
-				*/
-
+				// Retrieve the render component from the selectedEnitity in the registry.
 				auto& renderComp = m_registry.get<RenderComponent>(selectedEntity);
 
 				//////////////////// Colour ////////////////////
@@ -212,17 +205,22 @@ void Editor::run()
 				rgb[0] = renderComp.rgb.x;
 				rgb[1] = renderComp.rgb.y;
 				rgb[2] = renderComp.rgb.z;
+				// UI labels for the colour elements.
 				ImGui::TextWrapped("Colour");
 				ImGui::Text("R           G           B");
+				// Colour edit UI element the value of which is set to rgb.
 				ImGui::ColorEdit3("Colour", rgb, 2);
 				// Set colour render component from rgb
 				renderComp.rgb = { rgb[0], rgb[1], rgb[2] };
+
+				ImGui::NewLine();
 
 				//////////////////// Mesh Type ////////////////////
 				// Set mesh type number from component
 				int meshEnum = renderComp.meshNum;
 				// The mesh types as strings for UI text.
 				const char* meshTypeNames[] { "Cuboid", "Sphere", "Capsule" };
+				// UI label for the mesh type radio button selection elements.
 				ImGui::TextWrapped("Mesh Type");
 				// Counter for which mesh type in the following for loop to add the option for as a radio button.
 				int typeCount = 0; 
@@ -230,6 +228,7 @@ void Editor::run()
 				for (auto type : meshTypeNames)
 				{
 					ImGui::RadioButton(meshTypeNames[typeCount], &meshEnum, typeCount);
+					ImGui::SameLine();
 					typeCount++;
 				}
 				// Set mesh render component from meshEnum
