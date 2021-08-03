@@ -206,18 +206,34 @@ void Editor::run()
 
 				auto& renderComp = m_registry.get<RenderComponent>(selectedEntity);
 
-				// Colour 
+				//////////////////// Colour ////////////////////
 				static float rgb[3];
 				// Set rgb from component
 				rgb[0] = renderComp.rgb.x;
 				rgb[1] = renderComp.rgb.y;
 				rgb[2] = renderComp.rgb.z;
-
 				ImGui::TextWrapped("Colour");
 				ImGui::Text("R           G           B");
 				ImGui::ColorEdit3("Colour", rgb, 2);
-				// Set component from rgb
+				// Set colour render component from rgb
 				renderComp.rgb = { rgb[0], rgb[1], rgb[2] };
+
+				//////////////////// Mesh Type ////////////////////
+				// Set mesh type number from component
+				int meshEnum = renderComp.meshNum;
+				// The mesh types as strings for UI text.
+				const char* meshTypeNames[] { "Cuboid", "Sphere", "Capsule" };
+				ImGui::TextWrapped("Mesh Type");
+				// Counter for which mesh type in the following for loop to add the option for as a radio button.
+				int typeCount = 0; 
+				// A for loop to add a radio button with a corresponding label for each of the specified mesh types in meshTypeNames.
+				for (auto type : meshTypeNames)
+				{
+					ImGui::RadioButton(meshTypeNames[typeCount], &meshEnum, typeCount);
+					typeCount++;
+				}
+				// Set mesh render component from meshEnum
+				renderComp.meshNum = meshEnum;
 
 				// Update mesh render
 				renderComp.updateRender();
