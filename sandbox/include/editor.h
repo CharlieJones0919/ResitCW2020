@@ -22,13 +22,15 @@ private:
 	entt::registry m_registry; //!< ECS registry
 	std::vector<entt::entity> m_entities; //!< Game objects
 
+	//! A struct to store the element's of a keyboard mapping - including the key number, a text description of the action it's for, and a pointer to the function the key should execute.
 	struct KeyBinding
 	{
+		//! Constructor to create a key binding.
 		KeyBinding(int key, char* desc, void(*func)()) : keyNum(key), keyDesc(desc), boundFunction(func) {};
-		int keyNum;
-		char* keyDesc;
-		void(*boundFunction)();
+		int keyNum;					//!< The SC int this key binding is for.
+		char* keyDesc;				//!< A text description of the action this key is for.
+		void(*boundFunction)();		//!< Pointer to the function this key should trigger.
 	};
-	std::vector<KeyBinding> m_keyBindings; //!< Keyboard mapping
-	const int m_numKeyBindings = 6;
+	std::vector<KeyBinding> m_keyBindings; //!< List of defined key mappings.
+	const int m_numKeyBindings = 6;		   //!< How many keys mappings are defined.
 };

@@ -246,13 +246,15 @@ void Editor::run()
 				renderComp.updateRender();
 			}
 				break;
-			case 'K':	// For higher marks perform key mapping here.
+			case 'K':	
 			{
 				ImGui::TextWrapped("Keyboard Bindings");
 				ImGui::Text("Bound Key      Action");
 				
+				// Stores all bound keys' labels (char*) and the key they're bound to as a character
 				std::vector<std::pair<char*, char>> boundKeys;	
 				boundKeys.reserve(m_numKeyBindings);
+				// Sets all the key bindings from m_keyBindings
 				for (int kCount = 0; kCount < m_numKeyBindings; kCount++)
 				{
 					if (boundKeys.size() < m_numKeyBindings)
@@ -262,17 +264,24 @@ void Editor::run()
 					}
 				}
 
+				// Text input boxes which allow for the input of 1 character (letter or number) which the described function/action is rebound to.
 				for (int kCount = 0; kCount < m_numKeyBindings; kCount++)
 				{
 					ImGui::PushItemWidth(50);
 					ImGui::InputText(boundKeys[kCount].first, &boundKeys[kCount].second, sizeof(char) * 2);	
-					m_keyBindings[kCount].keyNum = (int)toupper(boundKeys[kCount].second);
+					
+					// Only rebind the key if the input was a number or letter.
+					if (isalpha(boundKeys[kCount].second) || isdigit(boundKeys[kCount].second))
+					{
+						// Rebind the key binding's number (key) to the input character as an integer in uppercase.
+						m_keyBindings[kCount].keyNum = (int)toupper(boundKeys[kCount].second);
+					}
 				}	
 			}
 				break;
-			case 'A':
+			case 'A': // For higher marks allow way points to be edited here.
 				ImGui::TextWrapped("No properties.");
-				// For higher marks allow way points to be edited here.
+				
 				break;
 			}
 			
@@ -321,42 +330,4 @@ bool Editor::onKeyPress(SC::KeyPressedEvent& e)
 			key.boundFunction(); return true;
 		}
 	}
-
-	//if (m_keyBindings.find(pressedKey) != m_keyBindings.end())
-	//{
-	//	m_keyBindings[pressedKey].first(); return true;
-	//}
-
-
-	//	switch (e.GetKeyCode())
-	//	{
-	//	case "Camera Forward":
-	//		break;
-	//	}
-
-	//	if (m_keyBindings[pressedKey]] == "Camera Forward"])
-	//	{
-	//		SC::Renderer::cameraForward(); return true;
-	//	}
-	//	else if (m_keyBindings[pressedKey] == "Camera Back"])
-	//	{
-	//		SC::Renderer::cameraBack(); return true;
-	//	}
-	//	else if (m_keyBindings[pressedKey] == "Camera Left"])
-	//	{
-	//		SC::Renderer::cameraLeft(); return true;
-	//	}
-	//	else if (m_keyBindings[pressedKey] == "Camera Right"])
-	//	{
-	//		SC::Renderer::cameraRight(); return true;
-	//	}
-	//	else if (m_keyBindings[pressedKey] == "Camera Up"])
-	//	{
-	//		SC::Renderer::cameraUp(); return true;
-	//	}
-	//	else if (m_keyBindings[pressedKey] == "Camera Down"])
-	//	{
-	//		SC::Renderer::cameraDown(); return true;
-	//	}
-	//}
 }
