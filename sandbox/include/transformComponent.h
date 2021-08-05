@@ -65,12 +65,6 @@ public:
 	}
 
 	glm::mat4& getTransform() { return transform; }
-
-	void addRotation(glm::vec3& eulerAngles)
-	{
-		glm::quat rotationDelta(eulerAngles);
-		rotation *= rotationDelta;
-	}
 private:
 	glm::mat4 transform;
 

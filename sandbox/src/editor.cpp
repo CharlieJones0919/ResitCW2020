@@ -23,6 +23,14 @@ void Editor::init()
 	// Setup ImGui
 	ImGuiHelper::init();
 
+	// Setup Keyboard Bindings
+	m_keyBindings.reserve(m_numKeyBindings);
+	m_keyBindings.push_back(KeyBinding(SC_KEY_W, "	   Camera Forward", &(SC::Renderer::cameraForward)));
+	m_keyBindings.push_back(KeyBinding(SC_KEY_A, "	   Camera Left",	&(SC::Renderer::cameraLeft)));
+	m_keyBindings.push_back(KeyBinding(SC_KEY_S, "	   Camera Back",    &(SC::Renderer::cameraBack)));
+	m_keyBindings.push_back(KeyBinding(SC_KEY_D, "	   Camera Right",   &(SC::Renderer::cameraRight)));
+	m_keyBindings.push_back(KeyBinding(SC_KEY_Q, "	   Camera Up",	    &(SC::Renderer::cameraUp)));
+	m_keyBindings.push_back(KeyBinding(SC_KEY_E, "	   Camera Down",    &(SC::Renderer::cameraDown)));
 
 	// Set up Game Objects
 	m_entities.reserve(100);
@@ -238,9 +246,29 @@ void Editor::run()
 				renderComp.updateRender();
 			}
 				break;
-			case 'K':
-				ImGui::TextWrapped("No properties.");
-				// For higher marks perform key mapping here.
+			case 'K':	// For higher marks perform key mapping here.
+			{
+				ImGui::TextWrapped("Keyboard Bindings");
+				ImGui::Text("Bound Key      Action");
+				
+				std::vector<std::pair<char*, char>> boundKeys;	
+				boundKeys.reserve(m_numKeyBindings);
+				for (int kCount = 0; kCount < m_numKeyBindings; kCount++)
+				{
+					if (boundKeys.size() < m_numKeyBindings)
+					{			
+						boundKeys.push_back(std::pair<char*, char>());
+						boundKeys[kCount] = std::pair<char*, char>(m_keyBindings[kCount].keyDesc, m_keyBindings[kCount].keyNum); 
+					}
+				}
+
+				for (int kCount = 0; kCount < m_numKeyBindings; kCount++)
+				{
+					ImGui::PushItemWidth(50);
+					ImGui::InputText(boundKeys[kCount].first, &boundKeys[kCount].second, sizeof(char) * 2);	
+					m_keyBindings[kCount].keyNum = (int)toupper(boundKeys[kCount].second);
+				}	
+			}
 				break;
 			case 'A':
 				ImGui::TextWrapped("No properties.");
@@ -268,7 +296,6 @@ void Editor::run()
 
 void Editor::shutdown()
 {
-
 	// Stop IMGui
 	ImGuiHelper::shutdown();
 
@@ -283,28 +310,53 @@ void Editor::onEvent(SC::Event & e)
 	dispatcher.dispatch<SC::KeyPressedEvent>(std::bind(&Editor::onKeyPress, this, std::placeholders::_1));
 }
 
-bool Editor::onKeyPress(SC::KeyPressedEvent & e)
+bool Editor::onKeyPress(SC::KeyPressedEvent& e)
 {
-	switch (e.GetKeyCode())
+	int pressedKey = e.GetKeyCode();
+
+	for (auto key : m_keyBindings)
 	{
-	case SC_KEY_W:
-		SC::Renderer::cameraForward(); return true;
-		break;
-	case SC_KEY_S:
-		SC::Renderer::cameraBack(); return true;
-		break;
-	case SC_KEY_A:
-		SC::Renderer::cameraLeft(); return true;
-	break;
-	case SC_KEY_D:
-		SC::Renderer::cameraRight(); return true;
-		break;
-	case SC_KEY_Q:
-		SC::Renderer::cameraUp(); return true;
-		break;
-	case SC_KEY_E:
-		SC::Renderer::cameraDown(); return true;
-		break;
+		if (key.keyNum == pressedKey)
+		{
+			key.boundFunction(); return true;
+		}
 	}
-	return false;
+
+	//if (m_keyBindings.find(pressedKey) != m_keyBindings.end())
+	//{
+	//	m_keyBindings[pressedKey].first(); return true;
+	//}
+
+
+	//	switch (e.GetKeyCode())
+	//	{
+	//	case "Camera Forward":
+	//		break;
+	//	}
+
+	//	if (m_keyBindings[pressedKey]] == "Camera Forward"])
+	//	{
+	//		SC::Renderer::cameraForward(); return true;
+	//	}
+	//	else if (m_keyBindings[pressedKey] == "Camera Back"])
+	//	{
+	//		SC::Renderer::cameraBack(); return true;
+	//	}
+	//	else if (m_keyBindings[pressedKey] == "Camera Left"])
+	//	{
+	//		SC::Renderer::cameraLeft(); return true;
+	//	}
+	//	else if (m_keyBindings[pressedKey] == "Camera Right"])
+	//	{
+	//		SC::Renderer::cameraRight(); return true;
+	//	}
+	//	else if (m_keyBindings[pressedKey] == "Camera Up"])
+	//	{
+	//		SC::Renderer::cameraUp(); return true;
+	//	}
+	//	else if (m_keyBindings[pressedKey] == "Camera Down"])
+	//	{
+	//		SC::Renderer::cameraDown(); return true;
+	//	}
+	//}
 }

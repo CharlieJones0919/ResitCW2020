@@ -22,4 +22,13 @@ private:
 	entt::registry m_registry; //!< ECS registry
 	std::vector<entt::entity> m_entities; //!< Game objects
 
+	struct KeyBinding
+	{
+		KeyBinding(int key, char* desc, void(*func)()) : keyNum(key), keyDesc(desc), boundFunction(func) {};
+		int keyNum;
+		char* keyDesc;
+		void(*boundFunction)();
+	};
+	std::vector<KeyBinding> m_keyBindings; //!< Keyboard mapping
+	const int m_numKeyBindings = 6;
 };
