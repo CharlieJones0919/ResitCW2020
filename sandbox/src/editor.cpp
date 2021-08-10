@@ -23,15 +23,6 @@ void Editor::init()
 	// Setup ImGui
 	ImGuiHelper::init();
 
-	// Setup Keyboard Bindings
-	m_keyBindings.reserve(m_numKeyBindings);
-	m_keyBindings.push_back(KeyBinding(SC_KEY_W, "	   Camera Forward", &(SC::Renderer::cameraForward)));
-	m_keyBindings.push_back(KeyBinding(SC_KEY_A, "	   Camera Left",	&(SC::Renderer::cameraLeft)));
-	m_keyBindings.push_back(KeyBinding(SC_KEY_S, "	   Camera Back",    &(SC::Renderer::cameraBack)));
-	m_keyBindings.push_back(KeyBinding(SC_KEY_D, "	   Camera Right",   &(SC::Renderer::cameraRight)));
-	m_keyBindings.push_back(KeyBinding(SC_KEY_Q, "	   Camera Up",	    &(SC::Renderer::cameraUp)));
-	m_keyBindings.push_back(KeyBinding(SC_KEY_E, "	   Camera Down",    &(SC::Renderer::cameraDown)));
-
 	// Set up Game Objects
 	m_entities.reserve(100);
 
@@ -51,9 +42,18 @@ void Editor::init()
 	// Cube
 	m_entities.push_back(m_registry.create());
 	m_registry.emplace<LabelComponent>(m_entities.back(), "Cube");
-	m_registry.emplace<TransformComponent>(m_entities.back(), glm::vec3(0.f, 0.5f, 0.f), glm::vec3(0.f), glm::vec3(1.f));
+	auto& transformComp = m_registry.emplace<TransformComponent>(m_entities.back(), glm::vec3(0.f, 0.5f, 0.f), glm::vec3(0.f), glm::vec3(1.f));
 	m_registry.emplace<RenderComponent>(m_entities.back(), MeshType::Cuboid, glm::vec3(0.f, 0.f, 1.f));
-	m_registry.emplace<KeyboardComponent>(m_entities.back());
+	m_registry.emplace<KeyboardComponent>(m_entities.back(), transformComp, 0.05f);
+
+	// Setup Keyboard Bindings
+	m_keyBindings.reserve(m_numKeyBindings);
+	m_keyBindings.push_back(KeyBinding(SC_KEY_W, "	   Move Camera Forward", &(SC::Renderer::cameraForward)));
+	m_keyBindings.push_back(KeyBinding(SC_KEY_A, "	   Move Camera Left", &(SC::Renderer::cameraLeft)));
+	m_keyBindings.push_back(KeyBinding(SC_KEY_S, "	   Move Camera Back", &(SC::Renderer::cameraBack)));
+	m_keyBindings.push_back(KeyBinding(SC_KEY_D, "	   Move Camera Right", &(SC::Renderer::cameraRight)));
+	m_keyBindings.push_back(KeyBinding(SC_KEY_Q, "	   Rotate Camera Up", &(SC::Renderer::cameraUp)));
+	m_keyBindings.push_back(KeyBinding(SC_KEY_E, "	   Rotate Camera Down", &(SC::Renderer::cameraDown)));
 }
 
 void Editor::run()
@@ -122,7 +122,6 @@ void Editor::run()
 				i++;
 			}
 
-
 			ImGui::TextWrapped("Game Objects:");
 			static int labelIndex = 0;
 			ImGui::SetNextItemWidth(-1);
@@ -136,10 +135,19 @@ void Editor::run()
 			std::vector<char *> componentLabels;
 			std::vector<char> componentTypes;
 			if (m_registry.any_of<LabelComponent>(selectedEntity)) { componentLabels.push_back("Label"); componentTypes.push_back('L'); }
-			if (m_registry.any_of<TransformComponent>(selectedEntity)) {componentLabels.push_back("Transform"); componentTypes.push_back('T');}
-			if (m_registry.any_of<RenderComponent>(selectedEntity)) {componentLabels.push_back("Render"); componentTypes.push_back('R');}
-			if (m_registry.any_of<KeyboardComponent>(selectedEntity)) {componentLabels.push_back("Key Controller"); componentTypes.push_back('K');}
-			if (m_registry.any_of<AIControllerComponent>(selectedEntity)) {componentLabels.push_back("AI Controller"); componentTypes.push_back('A');}
+			if (m_registry.any_of<TransformComponent>(selectedEntity)) {componentLabels.push_back("Transform"); componentTypes.push_back('T'); }
+			if (m_registry.any_of<RenderComponent>(selectedEntity)) {componentLabels.push_back("Render"); componentTypes.push_back('R'); }
+			if (m_registry.any_of<KeyboardComponent>(selectedEntity)) { componentLabels.push_back("Key Controller"); componentTypes.push_back('K');
+				//auto& keyboardComp = m_registry.get<KeyboardComponent>(selectedEntity);
+				//m_keyBindings.push_back(KeyBinding(SC_KEY_I, "	   Move Playable Object Forward", keyboardComp.forward()));
+				
+			
+				////	//m_keyBindings.push_back(KeyBinding(SC_KEY_J, "	   Move Playable Object Left", &(keyboardComp.move(MovementDir::Left))));
+				////	//m_keyBindings.push_back(KeyBinding(SC_KEY_K, "	   Move Playable Object Backward", &(keyboardComp.move(MovementDir::Back))));
+				////	//m_keyBindings.push_back(KeyBinding(SC_KEY_L, "	   Move Playable Object Right", &(keyboardComp.move(MovementDir::Right))));
+			
+			}
+			if (m_registry.any_of<AIControllerComponent>(selectedEntity)) {componentLabels.push_back("AI Controller"); componentTypes.push_back('A'); }
 
 			ImGui::TextWrapped("Components:");
 			static int componentIndex = 0;
@@ -250,17 +258,17 @@ void Editor::run()
 			{
 				ImGui::TextWrapped("Keyboard Bindings");
 				ImGui::Text("Bound Key      Action");
-				
+
 				// Stores all bound keys' labels (char*) and the key they're bound to as a character
-				std::vector<std::pair<char*, char>> boundKeys;	
+				std::vector<std::pair<char*, char>> boundKeys;
 				boundKeys.reserve(m_numKeyBindings);
 				// Sets all the key bindings from m_keyBindings
 				for (int kCount = 0; kCount < m_numKeyBindings; kCount++)
 				{
 					if (boundKeys.size() < m_numKeyBindings)
-					{			
+					{
 						boundKeys.push_back(std::pair<char*, char>());
-						boundKeys[kCount] = std::pair<char*, char>(m_keyBindings[kCount].keyDesc, m_keyBindings[kCount].keyNum); 
+						boundKeys[kCount] = std::pair<char*, char>(m_keyBindings[kCount].keyDesc, m_keyBindings[kCount].keyNum);
 					}
 				}
 
@@ -268,15 +276,15 @@ void Editor::run()
 				for (int kCount = 0; kCount < m_numKeyBindings; kCount++)
 				{
 					ImGui::PushItemWidth(50);
-					ImGui::InputText(boundKeys[kCount].first, &boundKeys[kCount].second, sizeof(char) * 2);	
-					
+					ImGui::InputText(boundKeys[kCount].first, &boundKeys[kCount].second, sizeof(char) * 2);
+
 					// Only rebind the key if the input was a number or letter.
 					if (isalpha(boundKeys[kCount].second) || isdigit(boundKeys[kCount].second))
 					{
 						// Rebind the key binding's number (key) to the input character as an integer in uppercase.
 						m_keyBindings[kCount].keyNum = (int)toupper(boundKeys[kCount].second);
 					}
-				}	
+				}
 			}
 				break;
 			case 'A': // For higher marks allow way points to be edited here.
@@ -323,11 +331,35 @@ bool Editor::onKeyPress(SC::KeyPressedEvent& e)
 {
 	int pressedKey = e.GetKeyCode();
 
+	auto playableEntities = m_registry.view<KeyboardComponent, TransformComponent>();
+	for (auto entity : playableEntities)
+	{
+		auto& keyboardComp = m_registry.get<KeyboardComponent>(entity);
+		auto& transformComp = m_registry.get<TransformComponent>(entity);
+
+		switch (pressedKey)
+		{
+		case SC_KEY_I:
+			keyboardComp.move(transformComp, MovementDir::Forward);
+			break;
+		case SC_KEY_K:
+			keyboardComp.move(transformComp, MovementDir::Back);
+			break;
+		case SC_KEY_J:
+			keyboardComp.move(transformComp, MovementDir::Left);
+			break;
+		case SC_KEY_L:
+			keyboardComp.move(transformComp, MovementDir::Right);
+			break;
+		}
+	}
+
 	for (auto key : m_keyBindings)
 	{
 		if (key.keyNum == pressedKey)
 		{
-			key.boundFunction(); return true;
+			((void(*)())key.boundFunc)();
+			return true;
 		}
 	}
 }

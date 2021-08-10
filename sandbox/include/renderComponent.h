@@ -1,11 +1,8 @@
 #pragma once
 #include <glm/glm.hpp>
 
-const enum class MeshType { 
-	Cuboid  = 0, 
-	Sphere  = 1,
-	Capsule = 2
-}; 
+//! Defined mesh types.
+const enum class MeshType { Cuboid = 0, Sphere = 1, Capsule = 2 };
 
 class RenderComponent
 {
@@ -29,10 +26,10 @@ public:
 
 	//! Set the local mesh type and colour to the public values for the meshNum (which number mesh type from the enum list) and rgb colour values.
 	void updateRender()
-	{ 
+	{
 		m_meshType = MeshType(meshNum);
 		m_colour = rgb;
-	}
+	};
 
 private:
 	MeshType m_meshType; //!< Internal storage for mesh type
