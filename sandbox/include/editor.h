@@ -34,5 +34,5 @@ private:
 		void(*boundFunc);			//!< Pointer to the function this key should trigger.
 	};
 	std::vector<KeyBinding> m_keyBindings; //!< List of defined key mappings.
-	int m_numKeyBindings = 6;		   //!< How many keys mappings are defined.
+	int m_numKeyBindings = 0;		   //!< How many keys mappings are defined.
 };

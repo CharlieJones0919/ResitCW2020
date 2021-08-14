@@ -3,6 +3,10 @@
 #include <map>
 
 TransformComponent* KeyboardComponent::m_keyTransComp = nullptr;
+glm::vec3 KeyboardComponent::wFRONT = glm::vec3(0.0f, 0.0f, -1.0f);
+glm::vec3 KeyboardComponent::wUP = glm::vec3(0.0f, 1.0f, 0.0f);
+glm::vec3 KeyboardComponent::wSIDE = glm::vec3(1.0f, 0.0f, 0.0f);
+float KeyboardComponent::m_speed = 0.0f;
 
 void Editor::init()
 {
@@ -44,21 +48,25 @@ void Editor::init()
 	// Cube
 	m_entities.push_back(m_registry.create());
 	m_registry.emplace<LabelComponent>(m_entities.back(), "Cube");
-	auto& transformComp = m_registry.emplace<TransformComponent>(m_entities.back(), glm::vec3(0.f, 0.5f, 0.f), glm::vec3(0.f), glm::vec3(1.f));
+	auto& transformCompB = m_registry.emplace<TransformComponent>(m_entities.back(), glm::vec3(0.f, 0.5f, 0.f), glm::vec3(0.f), glm::vec3(1.f));
 	m_registry.emplace<RenderComponent>(m_entities.back(), MeshType::Cuboid, glm::vec3(0.f, 0.f, 1.f));
-	auto& keyboardComp = m_registry.emplace<KeyboardComponent>(m_entities.back(), &transformComp, 0.05f);
+	m_registry.emplace<KeyboardComponent>(m_entities.back(), &transformCompB, 0.05f);
 
 	// Setup Keyboard Bindings
 	m_keyBindings.reserve(m_numKeyBindings);
-	m_keyBindings.push_back(KeyBinding(SC_KEY_W, "	   Move Camera Forward", &(SC::Renderer::cameraForward)));
-	m_keyBindings.push_back(KeyBinding(SC_KEY_A, "	   Move Camera Left", &(SC::Renderer::cameraLeft)));
-	m_keyBindings.push_back(KeyBinding(SC_KEY_S, "	   Move Camera Back", &(SC::Renderer::cameraBack)));
-	m_keyBindings.push_back(KeyBinding(SC_KEY_D, "	   Move Camera Right", &(SC::Renderer::cameraRight)));
-	m_keyBindings.push_back(KeyBinding(SC_KEY_Q, "	   Rotate Camera Up", &(SC::Renderer::cameraUp)));
-	m_keyBindings.push_back(KeyBinding(SC_KEY_E, "	   Rotate Camera Down", &(SC::Renderer::cameraDown)));
+	m_keyBindings.push_back(KeyBinding(SC_KEY_W, "	   Move Camera Forward", &(SC::Renderer::cameraForward))); m_numKeyBindings++;
+	m_keyBindings.push_back(KeyBinding(SC_KEY_A, "	   Move Camera Left", &(SC::Renderer::cameraLeft))); m_numKeyBindings++;
+	m_keyBindings.push_back(KeyBinding(SC_KEY_S, "	   Move Camera Back", &(SC::Renderer::cameraBack))); m_numKeyBindings++;
+	m_keyBindings.push_back(KeyBinding(SC_KEY_D, "	   Move Camera Right", &(SC::Renderer::cameraRight))); m_numKeyBindings++;
+	m_keyBindings.push_back(KeyBinding(SC_KEY_Q, "	   Rotate Camera Up", &(SC::Renderer::cameraUp))); m_numKeyBindings++;
+	m_keyBindings.push_back(KeyBinding(SC_KEY_E, "	   Rotate Camera Down", &(SC::Renderer::cameraDown))); m_numKeyBindings++;
 
-	//static void ptr = keyboardComp.moveForward();
-	//m_keyBindings.push_back(KeyBinding(SC_KEY_I, "	   Move Playable Object Forward", &ptr));
+	m_keyBindings.push_back(KeyBinding(SC_KEY_I, "	   Move Playable Object Forward", &(KeyboardComponent::moveForward))); m_numKeyBindings++;
+	m_keyBindings.push_back(KeyBinding(SC_KEY_J, "	   Move Playable Object Left", &(KeyboardComponent::moveLeft))); m_numKeyBindings++;
+	m_keyBindings.push_back(KeyBinding(SC_KEY_K, "	   Move Playable Object Back", &(KeyboardComponent::moveBack))); m_numKeyBindings++;
+	m_keyBindings.push_back(KeyBinding(SC_KEY_L, "	   Move Playable Object Right", &(KeyboardComponent::moveRight))); m_numKeyBindings++;
+	m_keyBindings.push_back(KeyBinding(SC_KEY_U, "	   Rotate Playable Object Left", &(KeyboardComponent::rotateLeft))); m_numKeyBindings++;
+	m_keyBindings.push_back(KeyBinding(SC_KEY_O, "	   Rotate Playable Object Right", &(KeyboardComponent::rotateRight))); m_numKeyBindings++;
 }
 
 void Editor::run()
@@ -326,36 +334,6 @@ void Editor::onEvent(SC::Event & e)
 bool Editor::onKeyPress(SC::KeyPressedEvent& e)
 {
 	int pressedKey = e.GetKeyCode();
-
-	// Here to test keyboard control functionality before attempting to intergrate into keymapping.
-	auto playableEntities = m_registry.view<KeyboardComponent, TransformComponent>();
-	for (auto entity : playableEntities)
-	{
-		auto& keyboardComp = m_registry.get<KeyboardComponent>(entity);
-
-		switch (pressedKey)
-		{
-		case SC_KEY_I:
-			keyboardComp.moveForward();
-			break;
-		//case SC_KEY_K:
-		//	keyboardComp.move(MovementDir::Back);
-		//	break;
-		//case SC_KEY_J:
-		//	keyboardComp.move(MovementDir::Left);
-		//	break;
-		//case SC_KEY_L:
-		//	keyboardComp.move(MovementDir::Right);
-		//	break;
-
-		//case SC_KEY_U:
-		//	keyboardComp.rotate(MovementDir::Left);
-		//	break;
-		//case SC_KEY_O:
-		//	keyboardComp.rotate(MovementDir::Right);
-		//	break;
-		}
-	}
 
 	// Checks if the key pressed was any of the keys in the m_keyBindings list of keys to functions - then execute's the bound key's function if it is.
 	for (auto key : m_keyBindings)
