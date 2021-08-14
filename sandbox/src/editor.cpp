@@ -2,6 +2,8 @@
 #include "ImGuiHelper.h"
 #include <map>
 
+TransformComponent* KeyboardComponent::m_keyTransComp = nullptr;
+
 void Editor::init()
 {
 	// Start the singleton application
@@ -44,7 +46,7 @@ void Editor::init()
 	m_registry.emplace<LabelComponent>(m_entities.back(), "Cube");
 	auto& transformComp = m_registry.emplace<TransformComponent>(m_entities.back(), glm::vec3(0.f, 0.5f, 0.f), glm::vec3(0.f), glm::vec3(1.f));
 	m_registry.emplace<RenderComponent>(m_entities.back(), MeshType::Cuboid, glm::vec3(0.f, 0.f, 1.f));
-	m_registry.emplace<KeyboardComponent>(m_entities.back(), &transformComp, 0.05f);
+	auto& keyboardComp = m_registry.emplace<KeyboardComponent>(m_entities.back(), &transformComp, 0.05f);
 
 	// Setup Keyboard Bindings
 	m_keyBindings.reserve(m_numKeyBindings);
@@ -54,6 +56,9 @@ void Editor::init()
 	m_keyBindings.push_back(KeyBinding(SC_KEY_D, "	   Move Camera Right", &(SC::Renderer::cameraRight)));
 	m_keyBindings.push_back(KeyBinding(SC_KEY_Q, "	   Rotate Camera Up", &(SC::Renderer::cameraUp)));
 	m_keyBindings.push_back(KeyBinding(SC_KEY_E, "	   Rotate Camera Down", &(SC::Renderer::cameraDown)));
+
+	//static void ptr = keyboardComp.moveForward();
+	//m_keyBindings.push_back(KeyBinding(SC_KEY_I, "	   Move Playable Object Forward", &ptr));
 }
 
 void Editor::run()
@@ -137,17 +142,7 @@ void Editor::run()
 			if (m_registry.any_of<LabelComponent>(selectedEntity)) { componentLabels.push_back("Label"); componentTypes.push_back('L'); }
 			if (m_registry.any_of<TransformComponent>(selectedEntity)) {componentLabels.push_back("Transform"); componentTypes.push_back('T'); }
 			if (m_registry.any_of<RenderComponent>(selectedEntity)) {componentLabels.push_back("Render"); componentTypes.push_back('R'); }
-			if (m_registry.any_of<KeyboardComponent>(selectedEntity)) { componentLabels.push_back("Key Controller"); componentTypes.push_back('K');
-				auto& keyboardComp = m_registry.get<KeyboardComponent>(selectedEntity);
-				auto& transformComp = m_registry.get<TransformComponent>(selectedEntity);
-				//m_keyBindings.push_back(KeyBinding(SC_KEY_I, "	   Move Playable Object Forward", &(keyboardComp.move, transformComp, MovementDir::Forward)));
-				
-			
-				////	//m_keyBindings.push_back(KeyBinding(SC_KEY_J, "	   Move Playable Object Left", &(keyboardComp.move(MovementDir::Left))));
-				////	//m_keyBindings.push_back(KeyBinding(SC_KEY_K, "	   Move Playable Object Backward", &(keyboardComp.move(MovementDir::Back))));
-				////	//m_keyBindings.push_back(KeyBinding(SC_KEY_L, "	   Move Playable Object Right", &(keyboardComp.move(MovementDir::Right))));
-			
-			}
+			if (m_registry.any_of<KeyboardComponent>(selectedEntity)) { componentLabels.push_back("Key Controller"); componentTypes.push_back('K'); }
 			if (m_registry.any_of<AIControllerComponent>(selectedEntity)) {componentLabels.push_back("AI Controller"); componentTypes.push_back('A'); }
 
 			ImGui::TextWrapped("Components:");
@@ -337,29 +332,28 @@ bool Editor::onKeyPress(SC::KeyPressedEvent& e)
 	for (auto entity : playableEntities)
 	{
 		auto& keyboardComp = m_registry.get<KeyboardComponent>(entity);
-		//auto& transformComp = m_registry.get<TransformComponent>(entity);
 
 		switch (pressedKey)
 		{
 		case SC_KEY_I:
-			keyboardComp.move(MovementDir::Forward);
+			keyboardComp.moveForward();
 			break;
-		case SC_KEY_K:
-			keyboardComp.move(MovementDir::Back);
-			break;
-		case SC_KEY_J:
-			keyboardComp.move(MovementDir::Left);
-			break;
-		case SC_KEY_L:
-			keyboardComp.move(MovementDir::Right);
-			break;
+		//case SC_KEY_K:
+		//	keyboardComp.move(MovementDir::Back);
+		//	break;
+		//case SC_KEY_J:
+		//	keyboardComp.move(MovementDir::Left);
+		//	break;
+		//case SC_KEY_L:
+		//	keyboardComp.move(MovementDir::Right);
+		//	break;
 
-		case SC_KEY_U:
-			keyboardComp.rotate(MovementDir::Left);
-			break;
-		case SC_KEY_O:
-			keyboardComp.rotate(MovementDir::Right);
-			break;
+		//case SC_KEY_U:
+		//	keyboardComp.rotate(MovementDir::Left);
+		//	break;
+		//case SC_KEY_O:
+		//	keyboardComp.rotate(MovementDir::Right);
+		//	break;
 		}
 	}
 

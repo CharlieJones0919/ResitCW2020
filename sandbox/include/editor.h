@@ -27,12 +27,12 @@ private:
 	{
 		//! Constructor to create a key binding.
 		KeyBinding(int key, char* desc, void(*func)()) : keyNum(key), keyDesc(desc), boundFunc(func) {};
-		KeyBinding(int key, char* desc, void* func) : keyNum(key), keyDesc(desc), boundFunc(func) {};
+		//KeyBinding(int key, char* desc, void* func) : keyNum(key), keyDesc(desc), boundFunc(func) {};
 
 		int keyNum;					//!< The SC int this key binding is for.
 		char* keyDesc;				//!< A text description of the action this key is for.
 		void(*boundFunc);			//!< Pointer to the function this key should trigger.
 	};
 	std::vector<KeyBinding> m_keyBindings; //!< List of defined key mappings.
-	const int m_numKeyBindings = 6;		   //!< How many keys mappings are defined.
+	int m_numKeyBindings = 6;		   //!< How many keys mappings are defined.
 };
