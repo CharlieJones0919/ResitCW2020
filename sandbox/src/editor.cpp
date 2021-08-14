@@ -42,9 +42,9 @@ void Editor::init()
 	// Cube
 	m_entities.push_back(m_registry.create());
 	m_registry.emplace<LabelComponent>(m_entities.back(), "Cube");
-	auto& transformComp = m_registry.emplace<TransformComponent>(m_entities.back(), glm::vec3(0.f, 0.5f, 0.f), glm::vec3(0.f), glm::vec3(1.f));
+	m_registry.emplace<TransformComponent>(m_entities.back(), glm::vec3(0.f, 0.5f, 0.f), glm::vec3(0.f), glm::vec3(1.f));
 	m_registry.emplace<RenderComponent>(m_entities.back(), MeshType::Cuboid, glm::vec3(0.f, 0.f, 1.f));
-	m_registry.emplace<KeyboardComponent>(m_entities.back(), transformComp, 0.05f);
+	m_registry.emplace<KeyboardComponent>(m_entities.back(), 0.05f);
 
 	// Setup Keyboard Bindings
 	m_keyBindings.reserve(m_numKeyBindings);
@@ -331,6 +331,7 @@ bool Editor::onKeyPress(SC::KeyPressedEvent& e)
 {
 	int pressedKey = e.GetKeyCode();
 
+	// Here to test keyboard control functionality before attempting to intergrate into keymapping.
 	auto playableEntities = m_registry.view<KeyboardComponent, TransformComponent>();
 	for (auto entity : playableEntities)
 	{
@@ -351,9 +352,17 @@ bool Editor::onKeyPress(SC::KeyPressedEvent& e)
 		case SC_KEY_L:
 			keyboardComp.move(transformComp, MovementDir::Right);
 			break;
+
+		case SC_KEY_U:
+			keyboardComp.rotate(transformComp, MovementDir::Left);
+			break;
+		case SC_KEY_O:
+			keyboardComp.rotate(transformComp, MovementDir::Right);
+			break;
 		}
 	}
 
+	// Checks if the key pressed was any of the keys in the m_keyBindings list of keys to functions - then execute's the bound key's function if it is.
 	for (auto key : m_keyBindings)
 	{
 		if (key.keyNum == pressedKey)
