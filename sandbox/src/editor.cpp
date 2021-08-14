@@ -2,7 +2,7 @@
 #include "ImGuiHelper.h"
 #include <map>
 
-TransformComponent* KeyboardComponent::m_keyTransComp = nullptr;
+TransformComponent* KeyboardComponent::m_transformComp = nullptr;
 glm::vec3 KeyboardComponent::wFRONT = glm::vec3(0.0f, 0.0f, -1.0f);
 glm::vec3 KeyboardComponent::wUP = glm::vec3(0.0f, 1.0f, 0.0f);
 glm::vec3 KeyboardComponent::wSIDE = glm::vec3(1.0f, 0.0f, 0.0f);
@@ -41,16 +41,21 @@ void Editor::init()
 	// Sphere
 	m_entities.push_back(m_registry.create());
 	m_registry.emplace<LabelComponent>(m_entities.back(), "Sphere");
-	m_registry.emplace<TransformComponent>(m_entities.back(), glm::vec3(-4.5f, 0.5f, -4.5f), glm::vec3(0.f), glm::vec3(1.f));
+	{
+		auto& transformComp = m_registry.emplace<TransformComponent>(m_entities.back(), glm::vec3(-4.5f, 0.5f, -4.5f), glm::vec3(0.f), glm::vec3(1.f));
+		m_registry.emplace<AIComponent>(m_entities.back(), transformComp, 0.05f, glm::vec3(-5.0f, 0.0f, -5.0f), glm::vec3(5.0f, 0.0f, 5.0f), 3);
+	}
 	m_registry.emplace<RenderComponent>(m_entities.back(), MeshType::Sphere, glm::vec3(1.f, 0.f, 0.f));
-	m_registry.emplace<AIControllerComponent>(m_entities.back());
 
 	// Cube
 	m_entities.push_back(m_registry.create());
 	m_registry.emplace<LabelComponent>(m_entities.back(), "Cube");
-	auto& transformCompB = m_registry.emplace<TransformComponent>(m_entities.back(), glm::vec3(0.f, 0.5f, 0.f), glm::vec3(0.f), glm::vec3(1.f));
+	{
+		auto& transformComp = m_registry.emplace<TransformComponent>(m_entities.back(), glm::vec3(0.f, 0.5f, 0.f), glm::vec3(0.f), glm::vec3(1.f));
+		m_registry.emplace<KeyboardComponent>(m_entities.back(), &transformComp, 0.05f);
+	}
 	m_registry.emplace<RenderComponent>(m_entities.back(), MeshType::Cuboid, glm::vec3(0.f, 0.f, 1.f));
-	m_registry.emplace<KeyboardComponent>(m_entities.back(), &transformCompB, 0.05f);
+
 
 	// Setup Keyboard Bindings
 	m_keyBindings.reserve(m_numKeyBindings);
@@ -151,7 +156,7 @@ void Editor::run()
 			if (m_registry.any_of<TransformComponent>(selectedEntity)) {componentLabels.push_back("Transform"); componentTypes.push_back('T'); }
 			if (m_registry.any_of<RenderComponent>(selectedEntity)) {componentLabels.push_back("Render"); componentTypes.push_back('R'); }
 			if (m_registry.any_of<KeyboardComponent>(selectedEntity)) { componentLabels.push_back("Key Controller"); componentTypes.push_back('K'); }
-			if (m_registry.any_of<AIControllerComponent>(selectedEntity)) {componentLabels.push_back("AI Controller"); componentTypes.push_back('A'); }
+			if (m_registry.any_of<AIComponent>(selectedEntity)) {componentLabels.push_back("AI Controller"); componentTypes.push_back('A'); }
 
 			ImGui::TextWrapped("Components:");
 			static int componentIndex = 0;
@@ -266,6 +271,7 @@ void Editor::run()
 				// Stores all bound keys' labels (char*) and the key they're bound to as a character
 				std::vector<std::pair<char*, char>> boundKeys;
 				boundKeys.reserve(m_numKeyBindings);
+
 				// Sets all the key bindings from m_keyBindings
 				for (int keyCount = 0; keyCount < m_numKeyBindings; keyCount++)
 				{
@@ -285,25 +291,10 @@ void Editor::run()
 						m_keyBindings[keyCount].keyNum = (int)toupper(boundKeys[keyCount].second);
 					}
 				}
-
-				//// Text input boxes which allow for the input of 1 character (letter or number) which the described function/action is rebound to.
-				//for (int kCount = 0; kCount < m_numKeyBindings; kCount++)
-				//{
-				//	ImGui::PushItemWidth(50);
-				//	ImGui::InputText(boundKeys[kCount].first, &boundKeys[kCount].second, sizeof(char) * 2);
-
-				//	// Only rebind the key if the input was a number or letter.
-				//	if (isalpha(boundKeys[kCount].second) || isdigit(boundKeys[kCount].second))
-				//	{
-				//		// Rebind the key binding's number (key) to the input character as an integer in uppercase.
-				//		m_keyBindings[kCount].keyNum = (int)toupper(boundKeys[kCount].second);
-				//	}
-				//}
 			}
 				break;
 			case 'A': // For higher marks allow way points to be edited here.
-				ImGui::TextWrapped("No properties.");
-				
+				ImGui::TextWrapped("No properties.");			
 				break;
 			}
 			

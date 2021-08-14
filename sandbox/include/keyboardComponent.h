@@ -8,7 +8,7 @@ class KeyboardComponent
 public:
 	//! Default constructor.
 	KeyboardComponent() {};
-	//! A constructor to set the 
+	//! A constructor to set the TransformComponent that should be updated when the movement/rotation functions are ran on keyboard input.
 	KeyboardComponent(TransformComponent* transformComp, float speed) { m_keyTransComp = transformComp; m_speed = speed; };
 
 	static void moveForward() { move(MovementDir::Forward); };
@@ -31,22 +31,22 @@ private:
 		glm::vec3 position = (*m_keyTransComp).translation;
 		glm::quat rotation = (*m_keyTransComp).rotation;
 
-		glm::vec3 m_forward = glm::normalize(rotation * wFRONT);
-		glm::vec3 m_sideward = glm::normalize(rotation * glm::cross(wFRONT, wUP));
+		glm::vec3 forward = glm::normalize(rotation * wFRONT);
+		glm::vec3 sideward = glm::normalize(rotation * glm::cross(wFRONT, wUP));
 
 		switch (direction)
 		{
 		case MovementDir::Forward:
-			position += m_forward * m_speed;
+			position += forward * m_speed;
 			break;
 		case MovementDir::Back:
-			position -= m_forward * m_speed;
+			position -= forward * m_speed;
 			break;
 		case MovementDir::Left:
-			position -= m_sideward * m_speed;
+			position -= sideward * m_speed;
 			break;
 		case MovementDir::Right:
-			position += m_sideward * m_speed;
+			position += sideward * m_speed;
 			break;
 		}
 
@@ -58,16 +58,16 @@ private:
 	{
 		glm::vec3 rotation = glm::eulerAngles((*m_keyTransComp).rotation);
 
-		glm::vec3 m_forward = glm::normalize((*m_keyTransComp).rotation * wFRONT);
-		glm::vec3 m_upward = glm::normalize((*m_keyTransComp).rotation * glm::cross(wSIDE, m_forward));
+		glm::vec3 forward = glm::normalize((*m_keyTransComp).rotation * wFRONT);
+		glm::vec3 upward = glm::normalize((*m_keyTransComp).rotation * glm::cross(wSIDE, forward));
 
 		switch (direction)
 		{
 		case MovementDir::Left:
-			rotation += m_upward * m_speed;
+			rotation += upward * m_speed;
 			break;
 		case MovementDir::Right:
-			rotation -= m_upward * m_speed;
+			rotation -= upward * m_speed;
 			break;
 		}
 

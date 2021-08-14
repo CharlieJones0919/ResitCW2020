@@ -6,7 +6,7 @@
 #include "transformComponent.h"
 #include "renderComponent.h"
 #include "keyboardComponent.h"
-#include "AIControllerComponent.h"
+#include "AIComponent.h"
 
 class Editor
 {
