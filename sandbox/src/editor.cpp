@@ -42,9 +42,9 @@ void Editor::init()
 	// Cube
 	m_entities.push_back(m_registry.create());
 	m_registry.emplace<LabelComponent>(m_entities.back(), "Cube");
-	m_registry.emplace<TransformComponent>(m_entities.back(), glm::vec3(0.f, 0.5f, 0.f), glm::vec3(0.f), glm::vec3(1.f));
+	auto& transformComp = m_registry.emplace<TransformComponent>(m_entities.back(), glm::vec3(0.f, 0.5f, 0.f), glm::vec3(0.f), glm::vec3(1.f));
 	m_registry.emplace<RenderComponent>(m_entities.back(), MeshType::Cuboid, glm::vec3(0.f, 0.f, 1.f));
-	m_registry.emplace<KeyboardComponent>(m_entities.back(), 0.05f);
+	m_registry.emplace<KeyboardComponent>(m_entities.back(), &transformComp, 0.05f);
 
 	// Setup Keyboard Bindings
 	m_keyBindings.reserve(m_numKeyBindings);
@@ -138,8 +138,9 @@ void Editor::run()
 			if (m_registry.any_of<TransformComponent>(selectedEntity)) {componentLabels.push_back("Transform"); componentTypes.push_back('T'); }
 			if (m_registry.any_of<RenderComponent>(selectedEntity)) {componentLabels.push_back("Render"); componentTypes.push_back('R'); }
 			if (m_registry.any_of<KeyboardComponent>(selectedEntity)) { componentLabels.push_back("Key Controller"); componentTypes.push_back('K');
-				//auto& keyboardComp = m_registry.get<KeyboardComponent>(selectedEntity);
-				//m_keyBindings.push_back(KeyBinding(SC_KEY_I, "	   Move Playable Object Forward", keyboardComp.forward()));
+				auto& keyboardComp = m_registry.get<KeyboardComponent>(selectedEntity);
+				auto& transformComp = m_registry.get<TransformComponent>(selectedEntity);
+				//m_keyBindings.push_back(KeyBinding(SC_KEY_I, "	   Move Playable Object Forward", &(keyboardComp.move, transformComp, MovementDir::Forward)));
 				
 			
 				////	//m_keyBindings.push_back(KeyBinding(SC_KEY_J, "	   Move Playable Object Left", &(keyboardComp.move(MovementDir::Left))));
@@ -336,28 +337,28 @@ bool Editor::onKeyPress(SC::KeyPressedEvent& e)
 	for (auto entity : playableEntities)
 	{
 		auto& keyboardComp = m_registry.get<KeyboardComponent>(entity);
-		auto& transformComp = m_registry.get<TransformComponent>(entity);
+		//auto& transformComp = m_registry.get<TransformComponent>(entity);
 
 		switch (pressedKey)
 		{
 		case SC_KEY_I:
-			keyboardComp.move(transformComp, MovementDir::Forward);
+			keyboardComp.move(MovementDir::Forward);
 			break;
 		case SC_KEY_K:
-			keyboardComp.move(transformComp, MovementDir::Back);
+			keyboardComp.move(MovementDir::Back);
 			break;
 		case SC_KEY_J:
-			keyboardComp.move(transformComp, MovementDir::Left);
+			keyboardComp.move(MovementDir::Left);
 			break;
 		case SC_KEY_L:
-			keyboardComp.move(transformComp, MovementDir::Right);
+			keyboardComp.move(MovementDir::Right);
 			break;
 
 		case SC_KEY_U:
-			keyboardComp.rotate(transformComp, MovementDir::Left);
+			keyboardComp.rotate(MovementDir::Left);
 			break;
 		case SC_KEY_O:
-			keyboardComp.rotate(transformComp, MovementDir::Right);
+			keyboardComp.rotate(MovementDir::Right);
 			break;
 		}
 	}

@@ -9,12 +9,12 @@ public:
 	//! Default constructor.
 	KeyboardComponent() {};
 	//! A constructor to set the 
-	KeyboardComponent(float speed) : m_speed(speed) {};
+	KeyboardComponent(TransformComponent* transformTarget, float speed) : m_transformComp(transformTarget), m_speed(speed) {};
 
-	void move(TransformComponent& transform, MovementDir direction)
+	void move(/*TransformComponent& transform,*/ MovementDir direction)
 	{
-		updateDirections(transform.rotation);
-		glm::vec3 newPosition = transform.translation;
+		updateDirections((*m_transformComp).rotation);
+		glm::vec3 newPosition = (*m_transformComp).translation;
 
 		switch (direction)
 		{
@@ -31,14 +31,14 @@ public:
 			newPosition += m_sideward * m_speed;
 			break;
 		}
-		transform.translation = newPosition;
-		transform.updateTransform();
+		(*m_transformComp).translation = newPosition;
+		(*m_transformComp).updateTransform();
 	};
 
-	void rotate(TransformComponent& transform, MovementDir direction)
+	void rotate(MovementDir direction)
 	{
-		updateDirections(transform.rotation);
-		glm::vec3 newRotation = glm::eulerAngles(transform.rotation);
+		updateDirections((*m_transformComp).rotation);
+		glm::vec3 newRotation = glm::eulerAngles((*m_transformComp).rotation);
 
 		switch (direction)
 		{
@@ -51,14 +51,16 @@ public:
 			break;
 		}
 
-		transform.rotation = glm::quat(newRotation);
-		transform.updateTransform();
+		(*m_transformComp).rotation = glm::quat(newRotation);
+		(*m_transformComp).updateTransform();
 	};
 
 private:
 	 glm::vec3 wFRONT = glm::vec3(0.0f, 0.0f, -1.0f);
 	 glm::vec3 wUP = glm::vec3(0.0f, 1.0f, 0.0f);
 	 glm::vec3 wSIDE = glm::vec3(1.0f, 0.0f, 0.0f);
+
+	TransformComponent* m_transformComp;
 
 	float m_speed;
 	glm::vec3 m_forward = wFRONT;
@@ -71,10 +73,5 @@ private:
 		m_forward = glm::normalize(rotation * wFRONT);
 		m_sideward = glm::normalize(rotation * glm::cross(wFRONT, wUP));
 		m_upward = glm::normalize( rotation * glm::cross(wSIDE, m_forward));
-
-		//// Set the directional vectors based on the newly calculated forward from current rotation.
-	//	m_forward = glm::normalize(m_forward);
-	//	m_sideward = glm::normalize(glm::cross(m_forward, m_upward));  // Normalize the vectors, because their length gets closer to 0 the more you look up or down which results in slower MovementDir.	
-	//	m_upward = glm::normalize(glm::cross(m_sideward, m_forward));
 	};
 };
