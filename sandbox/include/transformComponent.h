@@ -53,19 +53,16 @@ public:
 	glm::mat4& updateTransform()
 	{
 		transform = glm::translate(glm::mat4(1.0f), translation) * glm::toMat4(rotation) * glm::scale(glm::mat4(1.0f), scale);
-
 		return transform;
 	}
 
 	glm::mat4& updateTransform(glm::mat4& parentTransform)
 	{
 		transform = parentTransform * updateTransform();
-
 		return transform;
 	}
 
 	glm::mat4& getTransform() { return transform; }
 private:
 	glm::mat4 transform;
-
 };

@@ -41,10 +41,8 @@ void Editor::init()
 	// Sphere
 	m_entities.push_back(m_registry.create());
 	m_registry.emplace<LabelComponent>(m_entities.back(), "Sphere");
-	{
-		auto& transformComp = m_registry.emplace<TransformComponent>(m_entities.back(), glm::vec3(-4.5f, 0.5f, -4.5f), glm::vec3(0.f), glm::vec3(1.f));
-		m_registry.emplace<AIComponent>(m_entities.back(), &transformComp, AIBehaviour::Loop, 1.0f, glm::ivec2(-10.0f, -10.0f), glm::ivec2(10.0f, 10.0f), 3);
-	}
+	m_registry.emplace<TransformComponent>(m_entities.back(), glm::vec3(-4.5f, 0.5f, -4.5f), glm::vec3(0.f), glm::vec3(1.f));
+	m_registry.emplace<AIComponent>(m_entities.back(), AIBehaviour::Loop, 1.0f, glm::ivec2(-10.0f, -10.0f), glm::ivec2(10.0f, 10.0f), 3);
 	m_registry.emplace<RenderComponent>(m_entities.back(), MeshType::Sphere, glm::vec3(1.f, 0.f, 0.f));
 
 	// Cube
@@ -87,7 +85,8 @@ void Editor::run()
 
 			// Draw all game objects
 
-			SC::Renderer::beginScene();		
+			SC::Renderer::beginScene();	
+
 			auto renderView = m_registry.view<RenderComponent, TransformComponent>();
 			for (auto entity : renderView)
 			{
@@ -112,13 +111,6 @@ void Editor::run()
 			}
 			SC::Renderer::endScene();
 
-			auto AIView = m_registry.view<AIComponent>();
-			for (auto entity : AIView)
-			{
-				auto AIComp = m_registry.get<AIComponent>(entity);
-				AIComp.update(elapsedTime);
-			}
-
 			// ImGui stuff
 			ImGuiHelper::begin();
 
@@ -129,7 +121,6 @@ void Editor::run()
 			ImGui::End();
 
 			// Game object settings window
-
 			ImGui::Begin("Properties");
 			// Game object list box
 			// Get char * for entity labels
@@ -144,6 +135,14 @@ void Editor::run()
 				labels[i] = (char*)malloc(len);
 				strcpy_s(labels[i], len, name.c_str());
 				i++;
+			}
+
+			auto AIView = m_registry.view<AIComponent, TransformComponent>();
+			for (auto& entity : AIView)
+			{
+				auto AIComp = m_registry.get<AIComponent>(entity);
+				auto& transformComp = m_registry.get<TransformComponent>(entity);
+				AIComp.update(elapsedTime, &transformComp);
 			}
 
 			ImGui::TextWrapped("Game Objects:");
@@ -162,7 +161,7 @@ void Editor::run()
 			if (m_registry.any_of<TransformComponent>(selectedEntity)) {componentLabels.push_back("Transform"); componentTypes.push_back('T'); }
 			if (m_registry.any_of<RenderComponent>(selectedEntity)) {componentLabels.push_back("Render"); componentTypes.push_back('R'); }
 			if (m_registry.any_of<KeyboardComponent>(selectedEntity)) { componentLabels.push_back("Key Controller"); componentTypes.push_back('K'); }
-			if (m_registry.any_of<AIComponent>(selectedEntity)) { componentLabels.push_back("AI Controller"); componentTypes.push_back('A'); }
+			if (m_registry.any_of<AIComponent>(selectedEntity)) { componentLabels.push_back("AI Controller"); componentTypes.push_back('A');}
 
 			ImGui::TextWrapped("Components:");
 			static int componentIndex = 0;
@@ -295,60 +294,60 @@ void Editor::run()
 				break;
 			case 'A': 
 			{
-				ImGui::TextWrapped("AI Properties"); ImGui::NewLine();
-				auto& AIComp = m_registry.get<AIComponent>(selectedEntity);
+				//ImGui::TextWrapped("AI Properties"); ImGui::NewLine();
+				//auto& AIComp = m_registry.get<AIComponent>(selectedEntity);
 
-				//////////////////// AI Behaviour ////////////////////
-				ImGui::TextWrapped("Current AI Behaviour"); 	// UI label for the AI behaviours radio button selection elements.
-				// Set AI behaviour number from the component.
-				int behaviourEnum = AIComp.behaviourNum;
-				// The AI behaviours as strings for UI text.
-				const char* behaviourNames[]{ "Loop", "Wander", "Pause" };
+				////////////////////// AI Behaviour ////////////////////
+				//ImGui::TextWrapped("Current AI Behaviour"); 	// UI label for the AI behaviours radio button selection elements.
+				//// Set AI behaviour number from the component.
+				//int behaviourEnum = AIComp.behaviourNum;
+				//// The AI behaviours as strings for UI text.
+				//const char* behaviourNames[]{ "Loop", "Wander", "Pause" };
 
-				// Counter for which AI behaviours in the following for loop to add the option for as a radio button.
-				int behavCount = 0;
-				// A for loop to add a radio button with a corresponding label for each of the specified AI behaviours in behaviourNames.
-				for (auto behaviour : behaviourNames)
-				{
-					ImGui::RadioButton(behaviourNames[behavCount], &behaviourEnum, behavCount);
-					ImGui::SameLine();
-					behavCount++;
-				}
-				AIComp.behaviourNum = behaviourEnum;
+				//// Counter for which AI behaviours in the following for loop to add the option for as a radio button.
+				//int behavCount = 0;
+				//// A for loop to add a radio button with a corresponding label for each of the specified AI behaviours in behaviourNames.
+				//for (auto behaviour : behaviourNames)
+				//{
+				//	ImGui::RadioButton(behaviourNames[behavCount], &behaviourEnum, behavCount);
+				//	ImGui::SameLine();
+				//	behavCount++;
+				//}
+				//AIComp.behaviourNum = behaviourEnum;
 
-				ImGui::NewLine();	ImGui::NewLine();
+				//ImGui::NewLine();	ImGui::NewLine();
 
-				//////////////////// Waypoints ////////////////////			
-				ImGui::TextWrapped("Waypoints");
-				ImGui::Text("ID  X-Axis		Z-Axis");
-				std::vector<glm::ivec2> waypoints;
-				waypoints.reserve(AIComp.getNumWaypoints());
+				////////////////////// Waypoints ////////////////////			
+				//ImGui::TextWrapped("Waypoints");
+				//ImGui::Text("ID  X-Axis		Z-Axis");
+				//std::vector<glm::ivec2> waypoints;
+				//waypoints.reserve(AIComp.getNumWaypoints());
 
-				int pointCount = 0;
-				for (auto point : AIComp.getWaypoints())
-				{
-					waypoints.push_back(point.first);
+				//int pointCount = 0;
+				//for (auto point : AIComp.getWaypoints())
+				//{
+				//	waypoints.push_back(point.first);
 
-					ImGui::PushItemWidth(75);
-					std::string num2String = std::to_string(pointCount) + "  ";
-					const char* str2Char = num2String.c_str();
-					ImGui::TextWrapped(str2Char); ImGui::SameLine();
+				//	ImGui::PushItemWidth(75);
+				//	std::string num2String = std::to_string(pointCount) + "  ";
+				//	const char* str2Char = num2String.c_str();
+				//	ImGui::TextWrapped(str2Char); ImGui::SameLine();
 
-					ImGui::InputInt("", &waypoints[pointCount].x);
-					ImGui::SameLine(); ImGui::TextWrapped(" "); ImGui::SameLine();
-					ImGui::InputInt("", &waypoints[pointCount].y);
+				//	ImGui::InputInt("", &waypoints[pointCount].x);
+				//	ImGui::SameLine(); ImGui::TextWrapped(" "); ImGui::SameLine();
+				//	ImGui::InputInt("", &waypoints[pointCount].y);
 
-					point.first.x = waypoints[pointCount].x;
-					point.first.y = waypoints[pointCount].y;
-				
-					pointCount++;
-				}
+				//	point.first.x = waypoints[pointCount].x;
+				//	point.first.y = waypoints[pointCount].y;
+				//
+				//	pointCount++;
+				//}
 
-				AIComp.updateAIComponent();
+				//AIComp.updateAIComponent();
 			}
 				break;
 			}
-			
+
 			ImGui::End();
 
 			// Console output window -- use ImGuiHelper::writeToConsole to write to this console
