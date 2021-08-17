@@ -12,7 +12,7 @@ public:
 	//! Default constructor.
 	AIComponent() { };
 
-	AIComponent(AIBehaviour startBehaviour, float speed, glm::ivec2 wpMinBounds, glm::ivec2 wpMaxBounds, int numDesiredWpts) : m_currentBehaviour(startBehaviour), m_speed(speed), m_currentWPTarget(0)
+	AIComponent(AIBehaviour startBehaviour, float speed, glm::ivec2 wpMinBounds, glm::ivec2 wpMaxBounds, int numDesiredWpts) : m_currentBehaviour(startBehaviour), m_speed(speed)
 	{
 		behaviourNum = static_cast<int>(m_currentBehaviour);
 		generateRandomWaypoints(wpMinBounds, wpMaxBounds, numDesiredWpts);
@@ -99,7 +99,7 @@ private:
 	AIBehaviour m_currentBehaviour;
 
 	std::vector<std::pair<glm::ivec2, bool>> m_waypoints;
-	int m_currentWPTarget;
+	static int m_currentWPTarget;
 	float m_foundDist;
 
 	glm::vec3 m_cWaypntPos;
@@ -126,7 +126,7 @@ private:
 		m_cForward = glm::normalize(transformComp->rotation * glm::vec3(0.0f, 0.0f, -1.0f));
 		m_cUpward = glm::normalize(transformComp->rotation * glm::cross(glm::vec3(1.0f, 0.0f, 0.0f), m_cForward));
 
-		std::cout << "m_cWaypntPos[" << m_currentWPTarget << "]: " << m_waypoints[m_currentWPTarget].first.x << ", " << m_cWaypntPos.y << ", " << m_waypoints[m_currentWPTarget].first.y << std::endl;
+		//std::cout << "m_cWaypntPos[" << m_currentWPTarget << "]: " << m_waypoints[m_currentWPTarget].first.x << ", " << m_cWaypntPos.y << ", " << m_waypoints[m_currentWPTarget].first.y << std::endl;
 	};
 
 	bool facingTarget(TransformComponent* transformComp)
@@ -193,6 +193,9 @@ private:
 		calcCurrentVectors(transformComp);
 		//std::cout << "Current WP: " << m_currentWPTarget << std::endl;
 
+		std::cout << "Current WP: " << m_currentWPTarget << std::endl;
+		std::cout << "WP Pos: " << m_waypoints[m_currentWPTarget].first.x << ", " "WP Pos: " << m_waypoints[m_currentWPTarget].first.y << std::endl;
+		std::cout << "State: " << m_waypoints[m_currentWPTarget].second << std::endl << std::endl;
 		if (!m_waypoints[m_currentWPTarget].second)
 		{
 			if (facingTarget(transformComp))
@@ -203,12 +206,12 @@ private:
 					{
 						//std::cout << "Next WP" << std::endl;
 						m_waypoints[m_currentWPTarget].second = true;
-						m_currentWPTarget++;
+						m_currentWPTarget += 1;
 					}
 					else
 					{
 						//std::cout << "Reset WP" << std::endl;
-						m_currentWPTarget += 1;
+						m_currentWPTarget = 0;
 						for (auto& point : m_waypoints)
 						{
 							point.second = false;

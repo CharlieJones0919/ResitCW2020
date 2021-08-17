@@ -8,6 +8,8 @@ glm::vec3 KeyboardComponent::wUP = glm::vec3(0.0f, 1.0f, 0.0f);
 glm::vec3 KeyboardComponent::wSIDE = glm::vec3(1.0f, 0.0f, 0.0f);
 float KeyboardComponent::m_speed = 0.0f;
 
+int AIComponent::m_currentWPTarget = 0;
+
 void Editor::init()
 {
 	// Start the singleton application
@@ -53,7 +55,6 @@ void Editor::init()
 		m_registry.emplace<KeyboardComponent>(m_entities.back(), &transformComp, 0.05f);
 	}
 	m_registry.emplace<RenderComponent>(m_entities.back(), MeshType::Cuboid, glm::vec3(0.f, 0.f, 1.f));
-
 
 	// Setup Keyboard Bindings
 	m_keyBindings.reserve(m_numKeyBindings);
