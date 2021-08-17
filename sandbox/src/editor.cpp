@@ -272,24 +272,23 @@ void Editor::run()
 				ImGui::Text("Bound Key      Action");
 
 				// Stores all bound keys' labels (char*) and the key they're bound to as a character
-				std::vector<std::pair<char*, char>> boundKeys;
+				std::vector<std::pair<char*, int>> boundKeys;
 				boundKeys.reserve(m_numKeyBindings);
 
 				// Sets all the key bindings from m_keyBindings
 				for (int keyCount = 0; keyCount < m_numKeyBindings; keyCount++)
 				{
-					boundKeys.push_back(std::pair<char*, char>());
-					boundKeys[keyCount] = std::pair<char*, char>(m_keyBindings[keyCount].keyDesc, m_keyBindings[keyCount].keyNum);
+					boundKeys.push_back(std::pair<char*, int>(m_keyBindings[keyCount].keyDesc, m_keyBindings[keyCount].keyNum));
 
 					ImGui::PushItemWidth(50);
-					ImGui::InputText(boundKeys[keyCount].first, &boundKeys[keyCount].second, 2);
+					ImGui::InputText(boundKeys[keyCount].first, (char*)&boundKeys[keyCount].second, 2);
 
 					// Only rebind the key if the input was a number or letter.
-					if (isalpha(boundKeys[keyCount].second) || isdigit(boundKeys[keyCount].second))
-					{
+					//if (isalpha(boundKeys[keyCount].second) || isdigit(boundKeys[keyCount].second))
+					//{
 						// Rebind the key binding's number (key) to the input character as an integer in uppercase.
-						m_keyBindings[keyCount].keyNum = (int)toupper(boundKeys[keyCount].second);
-					}
+						m_keyBindings[keyCount].keyNum = toupper(boundKeys[keyCount].second);
+					//}
 				}
 			}
 				break;
@@ -314,7 +313,7 @@ void Editor::run()
 					ImGui::SameLine();
 					behavCount++;
 				}
-				//AIComp.behaviourNum = behaviourEnum;
+				AIComp.behaviourNum = behaviourEnum;
 
 				ImGui::NewLine();	ImGui::NewLine();
 
@@ -344,7 +343,7 @@ void Editor::run()
 					pointCount++;
 				}
 
-				//AIComp.updateAIComponent();
+				AIComp.updateAIComponent();
 			}
 				break;
 			}

@@ -96,7 +96,16 @@ public:
 
 	void updateAIComponent()
 	{
-		m_currentBehaviour = AIBehaviour(behaviourNum);
+		if (m_currentBehaviour != behaviourNum)
+		{
+			m_currentBehaviour = AIBehaviour(behaviourNum);
+
+			m_currentWPTarget = 0;
+			for (auto& point : m_waypoints)
+			{
+				point.second = false;
+			}
+		}
 	};
 private:
 	float m_moveSpeed;
