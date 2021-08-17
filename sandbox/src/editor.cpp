@@ -297,7 +297,7 @@ void Editor::run()
 				//////////////////// AI Behaviour ////////////////////
 				ImGui::TextWrapped("Current AI Behaviour"); 	// UI label for the AI behaviours radio button selection elements.
 				// Set AI behaviour number from the component.
-				int behaviourEnum = AIComp.behaviourNum;
+				int behaviourEnum = AIComp.getCurrentBehavNum();
 				// The AI behaviours as strings for UI text.
 				const char* behaviourNames[]{ "Loop", "Wander", "Pause" };
 
@@ -310,13 +310,13 @@ void Editor::run()
 					ImGui::SameLine();
 					behavCount++;
 				}
-				AIComp.behaviourNum = behaviourEnum;
+				AIComp.setBehaviour(AIBehaviour(behaviourEnum));
 
 				ImGui::NewLine();	ImGui::NewLine();
 
 				//////////////////// Waypoints ////////////////////			
 				ImGui::TextWrapped("Waypoints");
-				ImGui::Text("X    Z    ID Current Target");
+				ImGui::Text("X    Z    ID Target"); 
 
 				int numPoints = AIComp.getNumWaypoints();
 				std::vector<glm::ivec2> points;
@@ -327,16 +327,27 @@ void Editor::run()
 					points.push_back(AIComp.getWaypoint(pointCount));
 
 					ImGui::PushItemWidth(60);
-					std::string ID2String = " " + std::to_string(pointCount) + " ";
+					std::string ID2String = " " + std::to_string(pointCount) + "  ";
 					const char* ID2Char = ID2String.c_str();
 					ImGui::InputInt2(ID2Char, &points[pointCount].x);
+					AIComp.editWaypoint(pointCount, points[pointCount]);
 
 					ImGui::SameLine();
 
 					int waypointIsTarget = AIComp.waypointIsTarget(pointCount);
 					ImGui::RadioButton("", waypointIsTarget);
 
-					AIComp.editWaypoint(pointCount, points[pointCount]);
+					ImGui::SameLine();
+					if (ImGui::SmallButton("DELETE"))
+					{
+						AIComp.deleteWaypoint(pointCount);
+					}
+				}
+				ImGui::NewLine();
+
+				if (ImGui::SmallButton("Add Waypoint")) 
+				{
+					AIComp.addWaypoint();
 				}
 
 				ImGui::NewLine();
@@ -350,8 +361,6 @@ void Editor::run()
 				float angleToTarg = AIComp.getAngle2Target();
 				ImGui::PushItemWidth(100);
 				ImGui::InputFloat("", &angleToTarg, 2);
-
-				AIComp.updateAIComponent();
 			}
 				break;
 			}

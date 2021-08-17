@@ -1,28 +1,21 @@
 #pragma once
 #include "IMAT3905.h"
-#include <iostream>
 
 const enum AIBehaviour { Loop = 0, Wander = 1, Pause = 2 };
 
 class AIComponent
 {
 public:
-	int behaviourNum = 0;
-
 	//! Default constructor.
 	AIComponent() { };
 
 	AIComponent(AIBehaviour startBehaviour, float mSpeed, float tSpeed, glm::ivec2 wpMinBounds, glm::ivec2 wpMaxBounds, int numDesiredWpts) : m_currentBehaviour(startBehaviour), m_moveSpeed(mSpeed), m_turnSpeed(tSpeed)
 	{
-		behaviourNum = static_cast<int>(m_currentBehaviour);
-
 		m_waypoints.reserve(numDesiredWpts);
 		for (int i = 0; i < numDesiredWpts; i++)
 		{
 			m_waypoints.push_back(std::pair<glm::ivec2, bool>(glm::ivec2(generateRandomInt(wpMinBounds.x, wpMaxBounds.x), generateRandomInt(wpMinBounds.y, wpMaxBounds.y)), false));
 		}
-
-		updateAIComponent();
 	};
 
 	//AIComponent(TransformComponent* transformComp, AIBehaviour startBehaviour, float speed, std::vector<glm::ivec2> wayPts)
@@ -42,17 +35,19 @@ public:
 	//	else { m_currentBehaviour = AIBehaviour::Pause; }
 	//};
 
+	int getCurrentBehavNum() { return m_currentBehaviour; };
 	int getNumWaypoints() { return m_waypoints.size(); };
 	glm::ivec2 getWaypoint(int id) { return m_waypoints[id].first; };
 	float getAngle2Target() { return m_angleToTarget; }
 	glm::vec3 getDist2Target() { return m_offsetToTarget; }
 
-	bool waypointIsTarget(int id)
-	{
-		if (id == m_cWPTarget) { return true; }
-		else { return false; }
-	};
+	bool waypointIsTarget(int id);
 
+	void addWaypoint()
+	{
+		m_waypoints.reserve(m_waypoints.size() + 1);
+		m_waypoints.push_back(std::pair<glm::ivec2, bool>(glm::ivec2(0), false));
+	};
 	void addWaypoint(glm::ivec2 newWP)
 	{
 		m_waypoints.reserve(m_waypoints.size() + 1);
@@ -72,7 +67,6 @@ public:
 		}
 	};
 
-
 	void editWaypoint(int pointNum, int newPosX, int newPosZ) { editWaypoint(pointNum, glm::ivec2(newPosX, newPosZ)); };
 	void editWaypoint(int pointNum, glm::ivec2 newPos)
 	{
@@ -85,22 +79,25 @@ public:
 
 	void deleteWaypoint(int wpNum)
 	{
-		//Delete waypoint.
+		//if (wpNum == m_cWPTarget) { setNextTarget(AIBehaviour::Loop); }		
+		//addWaypoint();
+
+
 	};
 
 	void update(float timestep, TransformComponent* transformComp)
 	{
 		if (m_currentBehaviour != AIBehaviour::Pause)
 		{
-			findWaypoint(timestep, transformComp, m_currentBehaviour);
+			findWaypoint(timestep, transformComp);
 		}
 	};
 
-	void updateAIComponent()
+	void setBehaviour(AIBehaviour newBehav)
 	{
-		if (m_currentBehaviour != behaviourNum)
+		if (m_currentBehaviour != newBehav)
 		{
-			m_currentBehaviour = AIBehaviour(behaviourNum);
+			m_currentBehaviour = newBehav;
 		}
 	};
 private:
@@ -192,7 +189,7 @@ private:
 		transformComp->updateTransform();
 	};
 
-	void findWaypoint(float timestep, TransformComponent* transformComp, AIBehaviour behaviour)
+	void findWaypoint(float timestep, TransformComponent* transformComp)
 	{
 		calcCurrentVectors(transformComp);
 
@@ -200,14 +197,19 @@ private:
 		{
 			if (facingTarget(transformComp))
 			{
-				if (reachedTarget(transformComp)) { setNextTarget(transformComp, behaviour); }
+				if (reachedTarget(transformComp)) 
+				{
+					setNextTarget(m_currentBehaviour);
+					transformComp->rotation = glm::quat(0, 0, 0, 1);
+					transformComp->updateTransform();
+				}
 				else { moveToTarget(timestep, transformComp); }
 			}
 			else { turnToTarget(timestep, transformComp); }
 		}
 	}
 
-	void setNextTarget(TransformComponent* transformComp, AIBehaviour behaviour)
+	void setNextTarget(AIBehaviour behaviour) 
 	{
 		switch (behaviour)
 		{
@@ -229,19 +231,11 @@ private:
 				{
 					point.second = false;
 				}
-
 			}
 			break;
 
-		case AIBehaviour::Wander:
-			
-			
-			int newWpntTarget = m_cWPTarget;
-			while (m_cWPTarget == newWpntTarget)
-			{
-				newWpntTarget = generateRandomInt(0, m_waypoints.size());
-			}
-			m_cWPTarget = newWpntTarget;
+		case AIBehaviour::Wander:	
+			m_cWPTarget = generateRandomInt(0, m_waypoints.size());
 
 			if (m_waypoints[m_cWPTarget].second)
 			{
@@ -252,7 +246,5 @@ private:
 			}
 			break;
 		}
-		transformComp->rotation = glm::quat(0, 0, 0, 1);
-		transformComp->updateTransform();
 	}
 };
