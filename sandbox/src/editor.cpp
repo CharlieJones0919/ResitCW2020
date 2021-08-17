@@ -8,7 +8,9 @@ glm::vec3 KeyboardComponent::wUP = glm::vec3(0.0f, 1.0f, 0.0f);
 glm::vec3 KeyboardComponent::wSIDE = glm::vec3(1.0f, 0.0f, 0.0f);
 float KeyboardComponent::m_speed = 0.0f;
 
-int AIComponent::m_currentWPTarget = 0;
+int AIComponent::m_cWPTarget = 0;
+float AIComponent::m_angleToTarget = 0;
+glm::vec3 AIComponent::m_offsetToTarget = glm::vec3(0);
 
 void Editor::init()
 {
@@ -44,7 +46,7 @@ void Editor::init()
 	m_entities.push_back(m_registry.create());
 	m_registry.emplace<LabelComponent>(m_entities.back(), "Sphere");
 	m_registry.emplace<TransformComponent>(m_entities.back(), glm::vec3(-4.5f, 0.5f, -4.5f), glm::vec3(0.f), glm::vec3(1.f));
-	m_registry.emplace<AIComponent>(m_entities.back(), AIBehaviour::Loop, 3.0f, 1.0f, glm::ivec2(-5.0f, -5.0f), glm::ivec2(5.0f, 5.0f), 3);
+	m_registry.emplace<AIComponent>(m_entities.back(), AIBehaviour::Wander, 2.0f, 0.75f, glm::ivec2(-5.0f, -5.0f), glm::ivec2(5.0f, 5.0f), 3);
 	m_registry.emplace<RenderComponent>(m_entities.back(), MeshType::Sphere, glm::vec3(1.f, 0.f, 0.f));
 
 	// Cube
@@ -281,14 +283,9 @@ void Editor::run()
 					boundKeys.push_back(std::pair<char*, int>(m_keyBindings[keyCount].keyDesc, m_keyBindings[keyCount].keyNum));
 
 					ImGui::PushItemWidth(50);
-					ImGui::InputText(boundKeys[keyCount].first, (char*)&boundKeys[keyCount].second, 2);
+					ImGui::InputText(boundKeys[keyCount].first, (char*)&boundKeys[keyCount].second, sizeof(char) * 2);
 
-					// Only rebind the key if the input was a number or letter.
-					//if (isalpha(boundKeys[keyCount].second) || isdigit(boundKeys[keyCount].second))
-					//{
-						// Rebind the key binding's number (key) to the input character as an integer in uppercase.
-						m_keyBindings[keyCount].keyNum = toupper(boundKeys[keyCount].second);
-					//}
+					m_keyBindings[keyCount].keyNum = toupper(boundKeys[keyCount].second);
 				}
 			}
 				break;
@@ -319,29 +316,40 @@ void Editor::run()
 
 				//////////////////// Waypoints ////////////////////			
 				ImGui::TextWrapped("Waypoints");
-				ImGui::Text("ID  X-Axis		Z-Axis");
-				std::vector<glm::ivec2> waypoints;
-				waypoints.reserve(AIComp.getNumWaypoints());
+				ImGui::Text("X    Z    ID Current Target");
 
-				int pointCount = 0;
-				for (auto point : AIComp.getWaypoints())
+				int numPoints = AIComp.getNumWaypoints();
+				std::vector<glm::ivec2> points;
+				points.reserve(numPoints);
+
+				for (int pointCount = 0; pointCount < numPoints; pointCount++)
 				{
-					waypoints.push_back(point.first);
+					points.push_back(AIComp.getWaypoint(pointCount));
 
-					ImGui::PushItemWidth(75);
-					std::string num2String = std::to_string(pointCount) + "  ";
-					const char* str2Char = num2String.c_str();
-					ImGui::TextWrapped(str2Char); ImGui::SameLine();
+					ImGui::PushItemWidth(60);
+					std::string ID2String = " " + std::to_string(pointCount) + " ";
+					const char* ID2Char = ID2String.c_str();
+					ImGui::InputInt2(ID2Char, &points[pointCount].x);
 
-					ImGui::InputInt("", &waypoints[pointCount].x);
-					ImGui::SameLine(); ImGui::TextWrapped(" "); ImGui::SameLine();
-					ImGui::InputInt("", &waypoints[pointCount].y);
+					ImGui::SameLine();
 
-					//point.first.x = waypoints[pointCount].x;
-					//point.first.y = waypoints[pointCount].y;
-				
-					pointCount++;
+					int waypointIsTarget = AIComp.waypointIsTarget(pointCount);
+					ImGui::RadioButton("", waypointIsTarget);
+
+					AIComp.editWaypoint(pointCount, points[pointCount]);
 				}
+
+				ImGui::NewLine();
+
+				ImGui::Text("Distance to Target (X,Y,Z): "); ImGui::SameLine();
+				glm::vec3 distToTarg = AIComp.getDist2Target();
+				ImGui::PushItemWidth(150);
+				ImGui::InputFloat3("", &distToTarg.x, 2);
+
+				ImGui::Text("Angle to Target: "); ImGui::SameLine();
+				float angleToTarg = AIComp.getAngle2Target();
+				ImGui::PushItemWidth(100);
+				ImGui::InputFloat("", &angleToTarg, 2);
 
 				AIComp.updateAIComponent();
 			}

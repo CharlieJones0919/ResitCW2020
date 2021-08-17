@@ -2,7 +2,7 @@
 #include "IMAT3905.h"
 #include <iostream>
 
-const enum AIBehaviour { Loop, Wander, Pause };
+const enum AIBehaviour { Loop = 0, Wander = 1, Pause = 2 };
 
 class AIComponent
 {
@@ -43,11 +43,18 @@ public:
 	//};
 
 	int getNumWaypoints() { return m_waypoints.size(); };
-	std::vector<std::pair<glm::ivec2, bool>> getWaypoints() { return m_waypoints; };
 	glm::ivec2 getWaypoint(int id) { return m_waypoints[id].first; };
+	float getAngle2Target() { return m_angleToTarget; }
+	glm::vec3 getDist2Target() { return m_offsetToTarget; }
 
-	void addWaypoint(glm::ivec2 newWP) 
-	{ 
+	bool waypointIsTarget(int id)
+	{
+		if (id == m_cWPTarget) { return true; }
+		else { return false; }
+	};
+
+	void addWaypoint(glm::ivec2 newWP)
+	{
 		m_waypoints.reserve(m_waypoints.size() + 1);
 		m_waypoints.push_back(std::pair<glm::ivec2, bool>(newWP, false));
 	};
@@ -69,7 +76,7 @@ public:
 	void editWaypoint(int pointNum, int newPosX, int newPosZ) { editWaypoint(pointNum, glm::ivec2(newPosX, newPosZ)); };
 	void editWaypoint(int pointNum, glm::ivec2 newPos)
 	{
-		if ((pointNum > 0) && (pointNum < m_waypoints.size()))
+		if ((pointNum >= 0) && (pointNum < m_waypoints.size()))
 		{
 			m_waypoints[pointNum].first = newPos;
 			m_waypoints[pointNum].second = false;
@@ -82,15 +89,10 @@ public:
 	};
 
 	void update(float timestep, TransformComponent* transformComp)
-	{		
-		switch (m_currentBehaviour)
+	{
+		if (m_currentBehaviour != AIBehaviour::Pause)
 		{
-		case AIBehaviour::Pause: 
-			break;
-		case AIBehaviour::Loop: loopBehaviour(timestep, transformComp);
-			break;
-		case AIBehaviour::Wander: wanderBehaviour(timestep, transformComp);
-			break;
+			findWaypoint(timestep, transformComp, m_currentBehaviour);
 		}
 	};
 
@@ -99,46 +101,55 @@ public:
 		if (m_currentBehaviour != behaviourNum)
 		{
 			m_currentBehaviour = AIBehaviour(behaviourNum);
-
-			m_currentWPTarget = 0;
-			for (auto& point : m_waypoints)
-			{
-				point.second = false;
-			}
 		}
 	};
 private:
+	float m_foundDist = 0.05f;
 	float m_moveSpeed;
 	float m_turnSpeed;
 	AIBehaviour m_currentBehaviour;
-
 	std::vector<std::pair<glm::ivec2, bool>> m_waypoints;
-	static int m_currentWPTarget;
-	float m_foundDist;
 
+	static int m_cWPTarget;
 	glm::vec3 m_cWaypntPos;
 	glm::vec3 m_cForward;
 	glm::vec3 m_cUpward;
-	float m_angleToTarget;
+
+	static float m_angleToTarget;
+	static	glm::vec3 m_offsetToTarget;
 
 	int generateRandomInt(int min, int max)
 	{
 		return min + (rand() % max);
 	};
 
+	float roundTo2Decimal(float amount)
+	{
+		int val = (amount * 100) + 0.5f;
+		return val / 100.0f;
+	}
+	glm::vec3 roundTo2Decimal(glm::vec3 amount)
+	{
+		glm::ivec3 val = (amount * glm::vec3(100) + glm::vec3(0.5f));
+		return ((glm::vec3)val / glm::vec3(100));
+	}
+
 	void calcCurrentVectors(TransformComponent* transformComp)
 	{
-		m_cWaypntPos = glm::vec3(m_waypoints[m_currentWPTarget].first.x, transformComp->translation.y, m_waypoints[m_currentWPTarget].first.y);
+		m_cWaypntPos = glm::vec3(m_waypoints[m_cWPTarget].first.x, transformComp->translation.y, m_waypoints[m_cWPTarget].first.y);
 		m_cForward = glm::normalize(transformComp->rotation * glm::vec3(0.0f, 0.0f, -1.0f));
 		m_cUpward = glm::normalize(transformComp->rotation * glm::cross(glm::vec3(1.0f, 0.0f, 0.0f), m_cForward));
+
+		m_offsetToTarget = m_cWaypntPos - transformComp->translation;
+		m_angleToTarget = acos(glm::dot(m_cForward, glm::normalize(m_offsetToTarget)));
+
+		m_offsetToTarget = roundTo2Decimal(m_offsetToTarget);
+		m_angleToTarget = roundTo2Decimal(m_angleToTarget);
 	};
 
 	bool facingTarget(TransformComponent* transformComp)
 	{
-		glm::vec3 m_offsetToTarget = m_cWaypntPos - transformComp->translation;
-		m_angleToTarget = acos(glm::dot(m_cForward, glm::normalize(m_offsetToTarget)));
-
-		if ((m_angleToTarget < 0.05f) && (m_angleToTarget > -0.05f))
+		if ((m_angleToTarget < m_foundDist) && (m_angleToTarget > -m_foundDist))
 		{
 			return true;
 		}
@@ -147,9 +158,8 @@ private:
 
 	bool reachedTarget(TransformComponent* transformComp)
 	{
-		float distanceToWpnt = sqrt(pow(transformComp->translation.x - m_cWaypntPos.x, 2) + pow(transformComp->translation.z - m_cWaypntPos.z, 2));
-
-		if (distanceToWpnt < 0.05f)
+		if ((m_offsetToTarget.x < m_foundDist) && (m_offsetToTarget.x > -m_foundDist) &&
+			(m_offsetToTarget.z < m_foundDist) && (m_offsetToTarget.z > -m_foundDist))
 		{
 			return true;
 		}
@@ -159,7 +169,7 @@ private:
 	void turnToTarget(float timestep, TransformComponent* transformComp)
 	{
 		glm::vec3 newRot = glm::eulerAngles(transformComp->rotation);
-		
+
 		if (m_angleToTarget < 0.0f)
 		{
 			newRot += m_cUpward * (m_turnSpeed * timestep);
@@ -175,59 +185,74 @@ private:
 
 	void moveToTarget(float timestep, TransformComponent* transformComp)
 	{
-		glm::vec3 newPos = transformComp->translation;		
+		glm::vec3 newPos = transformComp->translation;
 		newPos += m_cForward * (m_moveSpeed * timestep);
 
 		transformComp->translation = newPos;
 		transformComp->updateTransform();
 	};
 
-
-	void pauseBehaviour(float timestep)
-	{
-	};
-
-	void loopBehaviour(float timestep, TransformComponent* transformComp)
+	void findWaypoint(float timestep, TransformComponent* transformComp, AIBehaviour behaviour)
 	{
 		calcCurrentVectors(transformComp);
 
-		std::cout << "Current WP: " << m_currentWPTarget << std::endl;
-		std::cout << "WP Pos: " << m_waypoints[m_currentWPTarget].first.x << ", " "WP Pos: " << m_waypoints[m_currentWPTarget].first.y << std::endl;
-		std::cout << "State: " << m_waypoints[m_currentWPTarget].second << std::endl << std::endl;
-		if (!m_waypoints[m_currentWPTarget].second)
+		if (!m_waypoints[m_cWPTarget].second)
 		{
 			if (facingTarget(transformComp))
 			{
-				if (reachedTarget(transformComp))
-				{
-					if (m_currentWPTarget < (m_waypoints.size() - 1))
-					{
-						m_waypoints[m_currentWPTarget].second = true;
-						m_currentWPTarget += 1;
-					}
-					else
-					{
-						m_currentWPTarget = 0;
-						for (auto& point : m_waypoints)
-						{
-							point.second = false;
-						}
-					}
-				}
-				else
-				{
-					moveToTarget(timestep, transformComp); 
-				}
+				if (reachedTarget(transformComp)) { setNextTarget(transformComp, behaviour); }
+				else { moveToTarget(timestep, transformComp); }
+			}
+			else { turnToTarget(timestep, transformComp); }
+		}
+	}
+
+	void setNextTarget(TransformComponent* transformComp, AIBehaviour behaviour)
+	{
+		switch (behaviour)
+		{
+		case AIBehaviour::Loop:
+			for (auto& point : m_waypoints)
+			{
+				point.second = false;
+			}
+
+			if (m_cWPTarget < (m_waypoints.size() - 1))
+			{
+				m_waypoints[m_cWPTarget].second = true;
+				m_cWPTarget++;
 			}
 			else
 			{
-				turnToTarget(timestep, transformComp);
+				m_cWPTarget = 0;
+				for (auto& point : m_waypoints)
+				{
+					point.second = false;
+				}
+
 			}
+			break;
+
+		case AIBehaviour::Wander:
+			
+			
+			int newWpntTarget = m_cWPTarget;
+			while (m_cWPTarget == newWpntTarget)
+			{
+				newWpntTarget = generateRandomInt(0, m_waypoints.size());
+			}
+			m_cWPTarget = newWpntTarget;
+
+			if (m_waypoints[m_cWPTarget].second)
+			{
+				for (auto& point : m_waypoints)
+				{
+					point.second = false;
+				}
+			}
+			break;
 		}
-	};
-
-	void wanderBehaviour(float timestep, TransformComponent* transformComp)
-	{
-
-	};
+		transformComp->rotation = glm::quat(0, 0, 0, 1);
+		transformComp->updateTransform();
+	}
 };
