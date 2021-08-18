@@ -2,12 +2,14 @@
 #include "ImGuiHelper.h"
 #include <map>
 
+// KeyboardComponent's static member definitions outside of class. 
 TransformComponent* KeyboardComponent::m_transformComp = nullptr;
 glm::vec3 KeyboardComponent::wFRONT = glm::vec3(0.0f, 0.0f, -1.0f);
 glm::vec3 KeyboardComponent::wUP = glm::vec3(0.0f, 1.0f, 0.0f);
 glm::vec3 KeyboardComponent::wSIDE = glm::vec3(1.0f, 0.0f, 0.0f);
 float KeyboardComponent::m_speed = 0.0f;
 
+// AIComponent's static member definitions outside of class. 
 int AIComponent::m_cWPTarget = 0;
 float AIComponent::m_angleToTarget = 0;
 glm::vec3 AIComponent::m_offsetToTarget = glm::vec3(0);
@@ -58,7 +60,7 @@ void Editor::init()
 	}
 	m_registry.emplace<RenderComponent>(m_entities.back(), MeshType::Cuboid, glm::vec3(0.f, 0.f, 1.f));
 
-	// Setup Keyboard Bindings
+	// Setup Keyboard Bindings 
 	m_keyBindings.reserve(m_numKeyBindings);
 	m_keyBindings.push_back(KeyBinding(SC_KEY_W, "	   Move Camera Forward", &(SC::Renderer::cameraForward))); m_numKeyBindings++;
 	m_keyBindings.push_back(KeyBinding(SC_KEY_A, "	   Move Camera Left", &(SC::Renderer::cameraLeft))); m_numKeyBindings++;
@@ -140,6 +142,7 @@ void Editor::run()
 				i++;
 			}
 
+			////////// Call AI Component's Update Function Each Frame Update //////////
 			auto AIView = m_registry.view<AIComponent, TransformComponent>();
 			for (auto& entity : AIView)
 			{
@@ -280,11 +283,13 @@ void Editor::run()
 				// Sets all the key bindings from m_keyBindings
 				for (int keyCount = 0; keyCount < m_numKeyBindings; keyCount++)
 				{
+					// Get the key bindings as listed in m_keyBindings' char* descriptions (for the UI labels) and current keys bound to the defined functions.
 					boundKeys.push_back(std::pair<char*, int>(m_keyBindings[keyCount].keyDesc, m_keyBindings[keyCount].keyNum));
 
 					ImGui::PushItemWidth(50);
 					ImGui::InputText(boundKeys[keyCount].first, (char*)&boundKeys[keyCount].second, sizeof(char) * 2);
 
+					// Convert the input int to "upper case" so they'll be recognised by the SC key event definitions, and set the new key values to the m_keyBindings list.
 					m_keyBindings[keyCount].keyNum = toupper(boundKeys[keyCount].second);
 				}
 			}
@@ -310,13 +315,13 @@ void Editor::run()
 					ImGui::SameLine();
 					behavCount++;
 				}
-				AIComp.setBehaviour(AIBehaviour(behaviourEnum));
+				AIComp.setBehaviour(AIBehaviour(behaviourEnum)); // Set the input or unchanged AIBehaviour from the radio button to the AIComponent.
 
 				ImGui::NewLine();	ImGui::NewLine();
 
 				//////////////////// Waypoints ////////////////////	
 				ImGui::TextWrapped("Waypoints");
-				ImGui::Text("X    Z   ID  Target"); 
+				ImGui::Text("X    Z    ID Target"); 
 
 				int numPoints = AIComp.getNumWaypoints();
 				std::vector<glm::ivec2> points;
@@ -324,35 +329,40 @@ void Editor::run()
 
 				for (int pointCount = 0; pointCount < numPoints; pointCount++)
 				{
+					// Retrieve each waypoint from the entity's AIComponent and add it to the temp list (points) to allow for revisions.
 					points.push_back(AIComp.getWaypoint(pointCount));
 
 					ImGui::PushItemWidth(60);
-					std::string ID2String = " " + std::to_string(pointCount) + "  ";
-					const char* ID2Char = ID2String.c_str();
-					ImGui::InputInt2(ID2Char, &points[pointCount].x);
-					AIComp.editWaypoint(pointCount, points[pointCount]);
+					std::string ID2String = " " + std::to_string(pointCount) + "  "; // Formatting of the waypoint number in the list as a string to go next to the UI elements as a text label.
+					const char* ID2Char = ID2String.c_str();						 // Convert ^ string to a const char* so it can be used as an InputInt2 label.
+					ImGui::InputInt2(ID2Char, &points[pointCount].x);				 // Allows for the editing of waypoint's position values.
+					AIComp.editWaypoint(pointCount, points[pointCount]);		     // Sets changed waypoint values to the AIComponent's waypoint list.
 
 					ImGui::SameLine();
 
+					// Non-interactable UI to display which waypoint the AIComponent is currently travelling towards as a highlighted radio button to the right of the point's editing input UI.
 					int waypointIsTarget = AIComp.waypointIsTarget(pointCount);
 					ImGui::RadioButton("", waypointIsTarget);
 				}
 
 				ImGui::NewLine();
 
-				if (ImGui::SmallButton("Add Waypoint")) { AIComp.addWaypoint(); }
-				if (numPoints > 0)
+				if (ImGui::SmallButton("Add Waypoint")) { AIComp.addWaypoint(); } // A button to add a new random waypoint to the AIComponent's list.
+				// A button to delete the waypoint at the begining of the component's vector list of points.
+				if (numPoints > 0) 
 				{
 					if (ImGui::SmallButton("Delete Waypoint")) { AIComp.deleteWaypoint(); }
 				}
 
 				ImGui::NewLine();
 
-				ImGui::Text("Distance to Target (X,Y,Z): "); ImGui::SameLine();
+				// UI to display the entity's current offset to its current target waypoint. 
+				ImGui::Text("Offset to Target (X,Y,Z): "); ImGui::SameLine();
 				glm::vec3 distToTarg = AIComp.getDist2Target();
 				ImGui::PushItemWidth(150);
 				ImGui::InputFloat3("", &distToTarg.x, 2);
 
+				// UI to display the entity's current angle from its current target waypoint. 
 				ImGui::Text("Angle to Target: "); ImGui::SameLine();
 				float angleToTarg = AIComp.getAngle2Target();
 				ImGui::PushItemWidth(100);
@@ -399,7 +409,7 @@ bool Editor::onKeyPress(SC::KeyPressedEvent& e)
 {
 	int pressedKey = e.GetKeyCode();
 
-	// Checks if the key pressed was any of the keys in the m_keyBindings list of keys to functions - then execute's the bound key's function if it is.
+	// Checks if the key pressed was any of the keys in the m_keyBindings list of keys to functions - then executes the bound key's function if it is.
 	for (auto key : m_keyBindings)
 	{
 		if (key.keyNum == pressedKey)

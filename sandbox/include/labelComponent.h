@@ -1,7 +1,6 @@
 /* \file label.h */
 #pragma once
 
-
 class LabelComponent
 {
 public:
