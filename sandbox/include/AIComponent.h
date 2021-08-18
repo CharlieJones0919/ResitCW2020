@@ -123,19 +123,23 @@ private:
 		return min + rand() % (max - min + 1);
 	};
 
+	//! Rounds the given float down to 2 decimal places.
 	float roundTo2Decimal(float amount)
 	{
 		int val = (amount * 100) + 0.5f;
 		return val / 100.0f;
 	}
+	//! Rounds the given vec3's values down to 2 decimal places.
 	glm::vec3 roundTo2Decimal(glm::vec3 amount)
 	{
 		glm::ivec3 val = (amount * glm::vec3(100) + glm::vec3(0.5f));
 		return ((glm::vec3)val / glm::vec3(100));
 	}
 
+	//! Calculates the entity's current directional vectors relative to its worldspace directions along with its current offset and angle to/from the current target waypoint position.
 	void calcCurrentVectors(TransformComponent* transformComp)
 	{
+		// Sets the position's Y value as the entity's Y position so the entity will only move in the X & Z directions.
 		glm::vec3 waypntPos = glm::vec3(m_waypoints[m_cWPTarget].first.x, transformComp->translation.y, m_waypoints[m_cWPTarget].first.y);
 
 		m_cForward = glm::normalize(transformComp->rotation * glm::vec3(0.0f, 0.0f, -1.0f));
@@ -144,10 +148,12 @@ private:
 		m_offsetToTarget = waypntPos - transformComp->translation;
 		m_angleToTarget = acos(glm::dot(m_cForward, glm::normalize(m_offsetToTarget)));
 
+		// Round down values.
 		m_offsetToTarget = roundTo2Decimal(m_offsetToTarget);
 		m_angleToTarget = roundTo2Decimal(m_angleToTarget);
 	};
 
+	//! Returns whether the entity is currently facing its target waypoint position.
 	bool facingTarget(TransformComponent* transformComp)
 	{
 		calcCurrentVectors(transformComp);
@@ -159,6 +165,7 @@ private:
 		else { return false; }
 	};
 
+	//! Returns whether the entity has reached the position of its target waypoint. When reached, sets the waypoint's boolean visited value to true.
 	bool reachedTarget(TransformComponent* transformComp)
 	{
 		calcCurrentVectors(transformComp);
@@ -167,16 +174,17 @@ private:
 			(m_offsetToTarget.z < m_foundDist) && (m_offsetToTarget.z > -m_foundDist))
 		{
 			m_waypoints[m_cWPTarget].second = true;
-			if (m_waypoints.size() == 1) { m_currentBehaviour == AIBehaviour::Pause; }
 			return true;
 		}
 		else { return false; }
 	};
 
+	//! Rotates the entity towards its target waypoint via its TransformComponent.
 	void turnToTarget(float timestep, TransformComponent* transformComp)
 	{
 		glm::vec3 newRot = glm::eulerAngles(transformComp->rotation);
 
+		// Rotate in the direction the entity is off from the waypoint.
 		if (m_angleToTarget < 0.0f)
 		{
 			newRot += m_cUpward * (m_turnSpeed * timestep);
@@ -186,19 +194,23 @@ private:
 			newRot -= m_cUpward * (m_turnSpeed * timestep);
 		}
 
+		// Update the TransformComponent with the new rotation. 
 		transformComp->rotation = glm::quat(newRot);
 		transformComp->updateTransform();
 	};
 
+	//! Moves the entity towards its target waypoint via its TransformComponent.
 	void moveToTarget(float timestep, TransformComponent* transformComp)
 	{
 		glm::vec3 newPos = transformComp->translation;
 		newPos += m_cForward * (m_moveSpeed * timestep);
 
+		// Update the TransformComponent with the new position. 
 		transformComp->translation = newPos;
 		transformComp->updateTransform();
 	};
 
+	//! Turns the entity towards its target waypoint then moves it forward in that direction. Once found, gets the next target waypoint in the list.
 	void findWaypoint(float timestep, TransformComponent* transformComp)
 	{
 		if (!m_waypoints[m_cWPTarget].second)
@@ -215,8 +227,10 @@ private:
 		}
 	}
 
+	//! Sets the next target waypoint from the list based on the component's current AIBehaviour.
 	void setNextTarget(AIBehaviour behaviour) 
 	{
+		// Pause the AIComponent if there aren't enough waypoints to move between.
 		if (m_waypoints.size() < 1)
 		{
 			m_cWPTarget = 0;
@@ -226,6 +240,7 @@ private:
 
 		switch (behaviour)
 		{
+		// If the AIBehaviour is set as "Loop" set the next target waypoint as the next in the vector list. At the end of the list, loop back around to the beginning of the list.
 		case AIBehaviour::Loop:
 			if (m_cWPTarget < (m_waypoints.size() - 1))
 			{
@@ -234,13 +249,14 @@ private:
 			else
 			{
 				m_cWPTarget = 0;
-				for (auto& point : m_waypoints)
+				for (auto& point : m_waypoints) // Reset the waypoints as unvisited when the list is looped back around.
 				{
 					point.second = false;
 				}
 			}
 			break;
 
+		// If the AIBehaviour is set as "Wander" set the next target waypoint any random point in the list.
 		case AIBehaviour::Wander:	
 			m_cWPTarget = generateRandomInt(0, m_waypoints.size());
 			m_waypoints[m_cWPTarget].second = false;
