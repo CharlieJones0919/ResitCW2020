@@ -314,9 +314,9 @@ void Editor::run()
 
 				ImGui::NewLine();	ImGui::NewLine();
 
-				//////////////////// Waypoints ////////////////////			
+				//////////////////// Waypoints ////////////////////	
 				ImGui::TextWrapped("Waypoints");
-				ImGui::Text("X    Z    ID Target"); 
+				ImGui::Text("X    Z   ID  Target"); 
 
 				int numPoints = AIComp.getNumWaypoints();
 				std::vector<glm::ivec2> points;
@@ -336,18 +336,14 @@ void Editor::run()
 
 					int waypointIsTarget = AIComp.waypointIsTarget(pointCount);
 					ImGui::RadioButton("", waypointIsTarget);
-
-					ImGui::SameLine();
-					if (ImGui::SmallButton("DELETE"))
-					{
-						AIComp.deleteWaypoint(pointCount);
-					}
 				}
+
 				ImGui::NewLine();
 
-				if (ImGui::SmallButton("Add Waypoint")) 
+				if (ImGui::SmallButton("Add Waypoint")) { AIComp.addWaypoint(); }
+				if (numPoints > 0)
 				{
-					AIComp.addWaypoint();
+					if (ImGui::SmallButton("Delete Waypoint")) { AIComp.deleteWaypoint(); }
 				}
 
 				ImGui::NewLine();

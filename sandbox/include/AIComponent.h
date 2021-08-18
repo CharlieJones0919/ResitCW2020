@@ -18,35 +18,21 @@ public:
 		}
 	};
 
-	//AIComponent(TransformComponent* transformComp, AIBehaviour startBehaviour, float speed, std::vector<glm::ivec2> wayPts)
-	//{ 
-	//	m_transformComp = transformComp;
-	//	m_speed = speed;
-	//	m_currentBehaviour = startBehaviour;
-
-	//	if (wayPts.size() != 0) 
-	//	{
-	//		m_waypoints.reserve(wayPts.size());
-	//		for (auto& point : wayPts)
-	//		{
-	//			m_waypoints.push_back(std::pair<glm::ivec2, bool>(point, false));
-	//		}
-	//	}
-	//	else { m_currentBehaviour = AIBehaviour::Pause; }
-	//};
-
 	int getCurrentBehavNum() { return m_currentBehaviour; };
 	int getNumWaypoints() { return m_waypoints.size(); };
 	glm::ivec2 getWaypoint(int id) { return m_waypoints[id].first; };
 	float getAngle2Target() { return m_angleToTarget; }
 	glm::vec3 getDist2Target() { return m_offsetToTarget; }
-
-	bool waypointIsTarget(int id);
+	bool waypointIsTarget(int id)
+	{
+		if (id == m_cWPTarget) { return true; }
+		else { return false; }
+	};
 
 	void addWaypoint()
 	{
 		m_waypoints.reserve(m_waypoints.size() + 1);
-		m_waypoints.push_back(std::pair<glm::ivec2, bool>(glm::ivec2(0), false));
+		m_waypoints.push_back(std::pair<glm::ivec2, bool>({generateRandomInt(-5,5), generateRandomInt(-5,5)}, false));
 	};
 	void addWaypoint(glm::ivec2 newWP)
 	{
@@ -67,6 +53,14 @@ public:
 		}
 	};
 
+	void setBehaviour(AIBehaviour newBehav)
+	{
+		if (m_currentBehaviour != newBehav)
+		{
+			m_currentBehaviour = newBehav;
+		}
+	};
+
 	void editWaypoint(int pointNum, int newPosX, int newPosZ) { editWaypoint(pointNum, glm::ivec2(newPosX, newPosZ)); };
 	void editWaypoint(int pointNum, glm::ivec2 newPos)
 	{
@@ -77,27 +71,21 @@ public:
 		}
 	};
 
-	void deleteWaypoint(int wpNum)
+	void deleteWaypoint()
 	{
-		//if (wpNum == m_cWPTarget) { setNextTarget(AIBehaviour::Loop); }		
-		//addWaypoint();
-
-
+		m_waypoints.erase(m_waypoints.begin());
+		if (m_cWPTarget == m_waypoints.size()) { setNextTarget(AIBehaviour::Loop); }
 	};
 
 	void update(float timestep, TransformComponent* transformComp)
 	{
 		if (m_currentBehaviour != AIBehaviour::Pause)
 		{
-			findWaypoint(timestep, transformComp);
-		}
-	};
-
-	void setBehaviour(AIBehaviour newBehav)
-	{
-		if (m_currentBehaviour != newBehav)
-		{
-			m_currentBehaviour = newBehav;
+			if (m_waypoints.size() > 1)
+			{
+				findWaypoint(timestep, transformComp);
+			}
+			else { m_currentBehaviour = AIBehaviour::Pause; }
 		}
 	};
 private:
@@ -134,6 +122,7 @@ private:
 	void calcCurrentVectors(TransformComponent* transformComp)
 	{
 		m_cWaypntPos = glm::vec3(m_waypoints[m_cWPTarget].first.x, transformComp->translation.y, m_waypoints[m_cWPTarget].first.y);
+
 		m_cForward = glm::normalize(transformComp->rotation * glm::vec3(0.0f, 0.0f, -1.0f));
 		m_cUpward = glm::normalize(transformComp->rotation * glm::cross(glm::vec3(1.0f, 0.0f, 0.0f), m_cForward));
 
@@ -146,6 +135,8 @@ private:
 
 	bool facingTarget(TransformComponent* transformComp)
 	{
+		calcCurrentVectors(transformComp);
+
 		if ((m_angleToTarget < m_foundDist) && (m_angleToTarget > -m_foundDist))
 		{
 			return true;
@@ -155,9 +146,13 @@ private:
 
 	bool reachedTarget(TransformComponent* transformComp)
 	{
+		calcCurrentVectors(transformComp);
+
 		if ((m_offsetToTarget.x < m_foundDist) && (m_offsetToTarget.x > -m_foundDist) &&
 			(m_offsetToTarget.z < m_foundDist) && (m_offsetToTarget.z > -m_foundDist))
 		{
+			m_waypoints[m_cWPTarget].second = true;
+			if (m_waypoints.size() == 1) { m_currentBehaviour == AIBehaviour::Pause; }
 			return true;
 		}
 		else { return false; }
@@ -191,37 +186,34 @@ private:
 
 	void findWaypoint(float timestep, TransformComponent* transformComp)
 	{
-		calcCurrentVectors(transformComp);
-
 		if (!m_waypoints[m_cWPTarget].second)
 		{
-			if (facingTarget(transformComp))
+			if (!reachedTarget(transformComp))
 			{
-				if (reachedTarget(transformComp)) 
+				if (facingTarget(transformComp))
 				{
-					setNextTarget(m_currentBehaviour);
-					transformComp->rotation = glm::quat(0, 0, 0, 1);
-					transformComp->updateTransform();
+					moveToTarget(timestep, transformComp);
 				}
-				else { moveToTarget(timestep, transformComp); }
+				else { turnToTarget(timestep, transformComp); }
 			}
-			else { turnToTarget(timestep, transformComp); }
+			else { setNextTarget(m_currentBehaviour); }
 		}
 	}
 
 	void setNextTarget(AIBehaviour behaviour) 
 	{
+		if (m_waypoints.size() < 1)
+		{
+			m_cWPTarget = 0;
+			m_currentBehaviour = AIBehaviour::Pause;
+			return;
+		}
+
 		switch (behaviour)
 		{
 		case AIBehaviour::Loop:
-			for (auto& point : m_waypoints)
-			{
-				point.second = false;
-			}
-
 			if (m_cWPTarget < (m_waypoints.size() - 1))
 			{
-				m_waypoints[m_cWPTarget].second = true;
 				m_cWPTarget++;
 			}
 			else
@@ -236,14 +228,7 @@ private:
 
 		case AIBehaviour::Wander:	
 			m_cWPTarget = generateRandomInt(0, m_waypoints.size());
-
-			if (m_waypoints[m_cWPTarget].second)
-			{
-				for (auto& point : m_waypoints)
-				{
-					point.second = false;
-				}
-			}
+			m_waypoints[m_cWPTarget].second = false;
 			break;
 		}
 	}
