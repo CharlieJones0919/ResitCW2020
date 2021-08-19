@@ -49,7 +49,7 @@ void Editor::init()
 	m_entities.push_back(m_registry.create());
 	m_registry.emplace<LabelComponent>(m_entities.back(), "Sphere");
 	m_registry.emplace<TransformComponent>(m_entities.back(), glm::vec3(-4.5f, 0.5f, -4.5f), glm::vec3(0.f), glm::vec3(1.f));
-	m_registry.emplace<AIComponent>(m_entities.back(), AIBehaviour::Wander, 2.0f, 0.75f, glm::ivec2(-5.0f, -5.0f), glm::ivec2(5.0f, 5.0f), 3);
+	m_registry.emplace<AIComponent>(m_entities.back(), AIBehaviour::Loop, 2.0f, 0.75f, glm::ivec2(-5.0f, -5.0f), glm::ivec2(5.0f, 5.0f), 3);
 	m_registry.emplace<RenderComponent>(m_entities.back(), MeshType::Sphere, glm::vec3(1.f, 0.f, 0.f));
 
 	// Cube
@@ -167,8 +167,9 @@ void Editor::run()
 			if (m_registry.any_of<LabelComponent>(selectedEntity)) { componentLabels.push_back("Label"); componentTypes.push_back('L'); }
 			if (m_registry.any_of<TransformComponent>(selectedEntity)) {componentLabels.push_back("Transform"); componentTypes.push_back('T'); }
 			if (m_registry.any_of<RenderComponent>(selectedEntity)) {componentLabels.push_back("Render"); componentTypes.push_back('R'); }
-			if (m_registry.any_of<KeyboardComponent>(selectedEntity)) { componentLabels.push_back("Key Controller"); componentTypes.push_back('K'); }
 			if (m_registry.any_of<AIComponent>(selectedEntity)) { componentLabels.push_back("AI Controller"); componentTypes.push_back('A');}
+			componentLabels.push_back("Key Mapping");
+			componentTypes.push_back('K');
 
 			ImGui::TextWrapped("Components:");
 			static int componentIndex = 0;
@@ -271,30 +272,6 @@ void Editor::run()
 				renderComp.updateRender();
 			}
 				break;
-			case 'K':	
-			{
-				ImGui::TextWrapped("Keyboard Properties"); ImGui::NewLine();
-				ImGui::TextWrapped("Keyboard Bindings");
-				ImGui::Text("Bound Key      Action");
-
-				// Stores all bound keys' labels (char*) and the key they're bound to as a character
-				std::vector<std::pair<char*, int>> boundKeys;
-				boundKeys.reserve(m_numKeyBindings);
-
-				// Sets all the key bindings from m_keyBindings
-				for (int keyCount = 0; keyCount < m_numKeyBindings; keyCount++)
-				{
-					// Get the key bindings as listed in m_keyBindings' char* descriptions (for the UI labels) and current keys bound to the defined functions.
-					boundKeys.push_back(std::pair<char*, int>(m_keyBindings[keyCount].keyDesc, m_keyBindings[keyCount].keyNum));
-
-					ImGui::PushItemWidth(50);
-					ImGui::InputText(boundKeys[keyCount].first, (char*)&boundKeys[keyCount].second, sizeof(char) * 2);
-
-					// Convert the input int to "upper case" so they'll be recognised by the SC key event definitions, and set the new key values to the m_keyBindings list.
-					m_keyBindings[keyCount].keyNum = toupper(boundKeys[keyCount].second);
-				}
-			}
-				break;
 			case 'A': 
 			{
 				ImGui::TextWrapped("AI Properties"); ImGui::NewLine();
@@ -373,6 +350,30 @@ void Editor::run()
 				ImGui::InputFloat("", &angleToTarg, 2);
 			}
 				break;
+			case 'K':
+			{
+				ImGui::TextWrapped("Keyboard Properties"); ImGui::NewLine();
+				ImGui::TextWrapped("Keyboard Bindings");
+				ImGui::Text("Bound Key      Action");
+
+				// Stores all bound keys' labels (char*) and the key they're bound to as a character
+				std::vector<std::pair<char*, int>> boundKeys;
+				boundKeys.reserve(m_numKeyBindings);
+
+				// Sets all the key bindings from m_keyBindings
+				for (int keyCount = 0; keyCount < m_numKeyBindings; keyCount++)
+				{
+					// Get the key bindings as listed in m_keyBindings' char* descriptions (for the UI labels) and current keys bound to the defined functions.
+					boundKeys.push_back(std::pair<char*, int>(m_keyBindings[keyCount].keyDesc, m_keyBindings[keyCount].keyNum));
+
+					ImGui::PushItemWidth(50);
+					ImGui::InputText(boundKeys[keyCount].first, (char*)&boundKeys[keyCount].second, sizeof(char) * 2);
+
+					// Convert the input int to "upper case" so they'll be recognised by the SC key event definitions, and set the new key values to the m_keyBindings list.
+					m_keyBindings[keyCount].keyNum = toupper(boundKeys[keyCount].second);
+				}
+			}
+			break;
 			}
 
 			ImGui::End();
@@ -402,7 +403,7 @@ void Editor::shutdown()
 	SC::Renderer::shutdown();
 }
 
-void Editor::onEvent(SC::Event & e)
+void Editor::onEvent(SC::Event& e)
 {
 	SC::EventDispatcher dispatcher(e);
 	dispatcher.dispatch<SC::WindowCloseEvent>(std::bind(&Editor::onClose, this, std::placeholders::_1));
@@ -411,6 +412,7 @@ void Editor::onEvent(SC::Event & e)
 
 bool Editor::onKeyPress(SC::KeyPressedEvent& e)
 {
+
 	int pressedKey = e.GetKeyCode();
 
 	// Checks if the key pressed was any of the keys in the m_keyBindings list of keys to functions - then executes the bound key's function if it is.
