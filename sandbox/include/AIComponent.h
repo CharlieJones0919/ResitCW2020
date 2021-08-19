@@ -69,10 +69,6 @@ public:
 		if (m_currentBehaviour != newBehav)
 		{
 			m_currentBehaviour = newBehav;
-			for (auto& point : m_waypoints) // Reset the waypoints as unvisited on behaviour change.
-			{
-				point.second = false;
-			}
 		}
 	};
 
