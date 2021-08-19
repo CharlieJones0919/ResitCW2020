@@ -21,18 +21,19 @@ public:
 		}
 	};
 
+	////////// Information Retrieval Functions for UI //////////
 	int getCurrentBehavNum() { return m_currentBehaviour; };			//!< Returns the index number of the current AIBehaviour the component is set to.
 	int getNumWaypoints() { return m_waypoints.size(); };				//!< Returns the number of waypoints in the component's list.
 	glm::ivec2 getWaypoint(int id) { return m_waypoints[id].first; };	//!< Returns the position of the waypoint at the specified index number in this component's list.
+	
 	float getAngle2Target() { return m_angleToTarget; }					//!< Returns the component's angle from its current target waypoint's position.
 	glm::vec3 getDist2Target() { return m_offsetToTarget; }				//!< Returns the component's offset from its current target waypoint's position.
-	
-	//! Returns whether or not the specified index number is the waypoint of the component's current target point in its vector list.
-	bool waypointIsTarget(int id)
+	bool getWpntIsVisted(int id) { return m_waypoints[id].second; };	//!< Returns whether the waypoint at the specified index number in this component's list has been visted.
+	bool getWpntIsTarget(int id)									    
 	{
 		if (id == m_cWPTarget) { return true; }
 		else { return false; }
-	};
+	};																	//!< Returns whether or not the specified index number is the waypoint of the component's current target point in its vector list.
 
 	//! Adds a random new waypoint position to the component's vector list.
 	void addWaypoint()
@@ -68,6 +69,10 @@ public:
 		if (m_currentBehaviour != newBehav)
 		{
 			m_currentBehaviour = newBehav;
+			for (auto& point : m_waypoints) // Reset the waypoints as unvisited on behaviour change.
+			{
+				point.second = false;
+			}
 		}
 	};
 
@@ -79,7 +84,6 @@ public:
 		if ((pointNum >= 0) && (pointNum < m_waypoints.size()))
 		{
 			m_waypoints[pointNum].first = newPos;
-			m_waypoints[pointNum].second = false;
 		}
 	};
 
@@ -108,14 +112,14 @@ private:
 	float m_moveSpeed;			//!< Speed to move the entity towards its current target waypoint.
 	float m_turnSpeed;			//!< Speed to rotate the entity towards its current target waypoint.
 	AIBehaviour m_currentBehaviour; //!< Component's current behaviour kind (e.g. Looping through list of waypoints, randomly moving between them, or being paused).
-	std::vector<std::pair<glm::ivec2, bool>> m_waypoints; //!< A list of positions for the entity to move between and a boolean to indicate whether they've been visited yet.
+	static std::vector<std::pair<glm::ivec2, bool>> m_waypoints; //!< A list of positions for the entity to move between and a boolean to indicate whether they've been visited yet.
 
 	static int m_cWPTarget;		//!< Current index position of the waypoint the entity should currently be heading towards from the m_waypoints vector list.
 	glm::vec3 m_cForward;		//!< Current forward directional vector relative to the worldspace directions and the entity's rotation.
 	glm::vec3 m_cUpward;		//!< Current upward directional vector relative to the worldspace directions and the entity's rotation.
 
 	static float m_angleToTarget;		//!< Current angle from the entity's front to the component's target waypoint position.
-	static	glm::vec3 m_offsetToTarget; //!< Difference in position of the entity's TranformComponent's translation to the component's target waypoint position.
+	static glm::vec3 m_offsetToTarget; //!< Difference in position of the entity's TranformComponent's translation to the component's target waypoint position.
 
 	//! Generates a random integer between the range of the specified minimum and maximum values.
 	int generateRandomInt(int min, int max)
@@ -223,7 +227,12 @@ private:
 				}
 				else { turnToTarget(timestep, transformComp); }
 			}
-			else { setNextTarget(m_currentBehaviour); }
+			else 
+			{ 
+				transformComp->rotation = glm::quat(0,0,0,1);
+				transformComp->updateTransform();
+				setNextTarget(m_currentBehaviour);
+			}
 		}
 	}
 
@@ -258,8 +267,28 @@ private:
 
 		// If the AIBehaviour is set as "Wander" set the next target waypoint any random point in the list.
 		case AIBehaviour::Wander:	
-			m_cWPTarget = generateRandomInt(0, m_waypoints.size());
-			m_waypoints[m_cWPTarget].second = false;
+			std::vector<int> availablePoints;
+
+			for (int i = 0; i < m_waypoints.size(); i++)
+			{
+				if (!m_waypoints[i].second)
+				{
+					availablePoints.push_back(i);
+				}
+			}
+
+			if (availablePoints.size() > 0)
+			{
+				int randomPoint = availablePoints[generateRandomInt(0, availablePoints.size() - 1)];
+				m_cWPTarget = randomPoint;
+			}
+			else
+			{
+				for (auto& point : m_waypoints) // Reset the waypoints as unvisited when all the points are visited.
+				{
+					point.second = false;
+				}
+			}
 			break;
 		}
 	}

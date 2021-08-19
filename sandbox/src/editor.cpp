@@ -10,6 +10,7 @@ glm::vec3 KeyboardComponent::wSIDE = glm::vec3(1.0f, 0.0f, 0.0f);
 float KeyboardComponent::m_speed = 0.0f;
 
 // AIComponent's static member definitions outside of class. 
+std::vector<std::pair<glm::ivec2, bool>> AIComponent::m_waypoints = std::vector<std::pair<glm::ivec2, bool>>();
 int AIComponent::m_cWPTarget = 0;
 float AIComponent::m_angleToTarget = 0;
 glm::vec3 AIComponent::m_offsetToTarget = glm::vec3(0);
@@ -321,7 +322,7 @@ void Editor::run()
 
 				//////////////////// Waypoints ////////////////////	
 				ImGui::TextWrapped("Waypoints");
-				ImGui::Text("X    Z    ID Target"); 
+				ImGui::Text("X    Z    ID Visited Target"); 
 
 				int numPoints = AIComp.getNumWaypoints();
 				std::vector<glm::ivec2> points;
@@ -333,15 +334,18 @@ void Editor::run()
 					points.push_back(AIComp.getWaypoint(pointCount));
 
 					ImGui::PushItemWidth(60);
-					std::string ID2String = " " + std::to_string(pointCount) + "  "; // Formatting of the waypoint number in the list as a string to go next to the UI elements as a text label.
-					const char* ID2Char = ID2String.c_str();						 // Convert ^ string to a const char* so it can be used as an InputInt2 label.
-					ImGui::InputInt2(ID2Char, &points[pointCount].x);				 // Allows for the editing of waypoint's position values.
-					AIComp.editWaypoint(pointCount, points[pointCount]);		     // Sets changed waypoint values to the AIComponent's waypoint list.
+					std::string ID2String = " " + std::to_string(pointCount) + "   "; // Formatting of the waypoint number in the list as a string to go next to the UI elements as a text label.
+					const char* ID2Char = ID2String.c_str();						  // Convert ^ string to a const char* so it can be used as an InputInt2 label.
+					ImGui::InputInt2(ID2Char, &points[pointCount].x);				  // Allows for the editing of waypoint's position values.
+					AIComp.editWaypoint(pointCount, points[pointCount]);		      // Sets changed waypoint values to the AIComponent's waypoint list.
 
 					ImGui::SameLine();
 
-					// Non-interactable UI to display which waypoint the AIComponent is currently travelling towards as a highlighted radio button to the right of the point's editing input UI.
-					int waypointIsTarget = AIComp.waypointIsTarget(pointCount);
+					// Non-interactable UI to display which waypoint the AIComponent is currently travelling towards as a highlighted radio button to the right of the point's editing input UI, and whether the point has been visited yet.
+					int waypointIsVisited = AIComp.getWpntIsVisted(pointCount);
+					int waypointIsTarget = AIComp.getWpntIsTarget(pointCount);
+					ImGui::RadioButton("", waypointIsVisited);
+					ImGui::SameLine(); ImGui::Text("  "); 	ImGui::SameLine();
 					ImGui::RadioButton("", waypointIsTarget);
 				}
 
